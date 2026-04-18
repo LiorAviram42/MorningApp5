@@ -138,50 +138,55 @@ export default function GameScreen({ kidId, onBack }: Props) {
           </motion.button>
         </div>
 
-        <div className="flex-1 flex flex-col w-full my-0 min-h-0">
-          <div className="flex justify-between items-center w-full flex-1 relative min-h-0">
-            {/* Right Tasks */}
-            <div className="flex flex-col justify-evenly h-full flex-[0_0_80px] z-10 py-0.5">
-              {rightTasks.map((t) => (
-                <TaskButton 
-                  key={t.id} 
-                  task={t} 
-                  isCompleted={completedTasks.has(t.id)} 
-                  isReady={isReady}
-                  onClick={() => toggleTask(t.id)} 
-                />
-              ))}
-            </div>
+        <div className="flex-1 flex flex-col w-full my-0 min-h-0 pt-1 pb-1">
+          {/* Main Grid Content Area - Scrollable but hides scrollbar */}
+          <div className="flex-1 w-full min-h-0 relative overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+            <div className="grid grid-cols-[1fr_minmax(120px,2fr)_1fr] h-full w-full items-center justify-items-center gap-1 sm:gap-2">
+              
+              {/* Right Tasks */}
+              <div className="flex flex-col justify-evenly h-full w-full items-center py-1 min-h-[250px]">
+                {rightTasks.map((t) => (
+                  <TaskButton 
+                    key={t.id} 
+                    task={t} 
+                    isCompleted={completedTasks.has(t.id)} 
+                    isReady={isReady}
+                    onClick={() => toggleTask(t.id)} 
+                  />
+                ))}
+              </div>
 
-            {/* Character */}
-            <div className="flex-1 h-full flex flex-col justify-center items-center absolute top-0 left-0 w-full z-0 pointer-events-none">
-              <img 
-                src={characterImg} 
-                alt="Character" 
-                className="max-w-[75%] max-h-[75%] object-contain transition-opacity duration-300"
-                onError={(e) => {
-                  e.currentTarget.src = `https://api.dicebear.com/7.x/fun-emoji/svg?seed=${kid.name}${isAllCompleted ? 'happy' : 'sleepy'}`;
-                }}
-              />
-            </div>
-
-            {/* Left Tasks */}
-            <div className="flex flex-col justify-evenly h-full flex-[0_0_80px] z-10 py-0.5">
-              {leftTasks.map((t) => (
-                <TaskButton 
-                  key={t.id} 
-                  task={t} 
-                  isCompleted={completedTasks.has(t.id)} 
-                  isReady={isReady}
-                  onClick={() => toggleTask(t.id)} 
+              {/* Character */}
+              <div className="flex flex-col justify-center items-center w-full h-full min-h-0">
+                <img 
+                  src={characterImg} 
+                  alt="Character" 
+                  className="max-w-full max-h-[140px] sm:max-h-[180px] md:max-h-[220px] object-contain transition-opacity duration-300 pointer-events-none drop-shadow-sm"
+                  onError={(e) => {
+                    e.currentTarget.src = `https://api.dicebear.com/7.x/fun-emoji/svg?seed=${kid.name}${isAllCompleted ? 'happy' : 'sleepy'}`;
+                  }}
                 />
-              ))}
+              </div>
+
+              {/* Left Tasks */}
+              <div className="flex flex-col justify-evenly h-full w-full items-center py-1 min-h-[250px]">
+                {leftTasks.map((t) => (
+                  <TaskButton 
+                    key={t.id} 
+                    task={t} 
+                    isCompleted={completedTasks.has(t.id)} 
+                    isReady={isReady}
+                    onClick={() => toggleTask(t.id)} 
+                  />
+                ))}
+              </div>
+
             </div>
           </div>
 
           {/* Progress Bar */}
           <div 
-            className="w-full h-[64px] bg-white rounded-full shrink-0 relative box-border border-2 border-[#333] p-1.5 mt-[-4px]"
+            className="w-full h-[36px] sm:h-[48px] md:h-[56px] bg-white rounded-full shrink-0 relative box-border border-2 border-[#333] p-1 shadow-[0_2px_0_#333] mt-2 mb-1"
           >
             <div className="w-full h-full rounded-full overflow-hidden bg-white">
               <div 
@@ -311,7 +316,7 @@ function TaskButton({ task, isCompleted, isReady, onClick }: TaskButtonProps) {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center w-[85px]">
+    <div className="flex flex-col items-center justify-center w-full max-w-[85px] shrink-0">
       <motion.button 
         animate={controls}
         onPointerDown={handlePointerDown}
@@ -320,7 +325,7 @@ function TaskButton({ task, isCompleted, isReady, onClick }: TaskButtonProps) {
           setIsPressed(false);
           controls.start({ y: 0, boxShadow: "0px 4px 0px #333" });
         }}
-        className={`w-[75px] h-[75px] rounded-full border border-[#333] ${isCompleted ? 'bg-white' : 'bg-[#fcf9f2]'} flex items-center justify-center p-0.5 touch-none`}
+        className={`w-[13vw] h-[13vw] min-w-[50px] min-h-[50px] max-w-[75px] max-h-[75px] rounded-full border border-[#333] ${isCompleted ? 'bg-white' : 'bg-[#fcf9f2]'} flex items-center justify-center p-0.5 touch-none shrink-0`}
       >
         <img 
           src={isCompleted ? task.iconOn : task.iconOff} 
@@ -332,7 +337,7 @@ function TaskButton({ task, isCompleted, isReady, onClick }: TaskButtonProps) {
           }}
         />
       </motion.button>
-      <span className="block text-[12px] font-bold text-[#333] mt-1 text-center leading-tight whitespace-pre-line px-1 h-[28px] flex items-center justify-center">
+      <span className="block text-[10px] sm:text-[12px] font-bold text-[#333] mt-1 text-center leading-tight whitespace-pre-line px-1 h-[28px] flex items-center justify-center w-full">
         {task.title}
       </span>
     </div>

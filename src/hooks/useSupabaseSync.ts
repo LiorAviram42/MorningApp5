@@ -107,11 +107,14 @@ export function useSupabaseSync() {
     // Optimistically update
     setStars((prev) => ({ ...prev, [kidId]: newCount }));
     
-    // UPSERT
-    await supabase.from('stars').upsert({
-      child_name: kidId,
-      star_count: newCount
-    });
+    // Explicit Update or Insert
+    const { data } = await supabase.from('stars').select('child_name').eq('child_name', kidId);
+    
+    if (data && data.length > 0) {
+      await supabase.from('stars').update({ star_count: newCount }).eq('child_name', kidId);
+    } else {
+      await supabase.from('stars').insert({ child_name: kidId, star_count: newCount });
+    }
   };
 
   const resetKidTasks = async (kidId: KidId) => {

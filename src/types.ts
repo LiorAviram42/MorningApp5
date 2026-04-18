@@ -1,3 +1,4 @@
+/// <reference types="vite/client" />
 export type KidId = 'yuvali' | 'maayani' | 'palgi';
 
 export interface Task {

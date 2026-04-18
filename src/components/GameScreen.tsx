@@ -137,9 +137,9 @@ export default function GameScreen({ kidId, onBack }: Props) {
         </div>
 
         <div className="flex-1 flex flex-col w-full my-0 min-h-0 gap-2 sm:gap-3 lg:gap-4">
-          <div className="flex-1 grid grid-cols-[clamp(80px,25vw,120px)_1fr_clamp(80px,25vw,120px)] items-stretch justify-items-center w-full min-h-0 relative">
+          <div className="flex-1 grid grid-cols-[clamp(70px,24vw,110px)_1fr_clamp(70px,24vw,110px)] items-stretch justify-items-center w-full min-h-0 relative">
             {/* Right Tasks */}
-            <div className="flex flex-col justify-center gap-[clamp(8px,3vh,32px)] h-full w-full items-center z-10 py-1">
+            <div className="flex flex-col justify-center gap-[clamp(4px,min(2.5vh,2vw),24px)] h-full w-full items-center z-10 py-1 min-h-0 relative">
               {rightTasks.map((t) => (
                 <TaskButton 
                   key={t.id} 
@@ -164,7 +164,7 @@ export default function GameScreen({ kidId, onBack }: Props) {
             </div>
 
             {/* Left Tasks */}
-            <div className="flex flex-col justify-center gap-[clamp(8px,3vh,32px)] h-full w-full items-center z-10 py-1">
+            <div className="flex flex-col justify-center gap-[clamp(4px,min(2.5vh,2vw),24px)] h-full w-full items-center z-10 py-1 min-h-0 relative">
               {leftTasks.map((t) => (
                 <TaskButton 
                   key={t.id} 
@@ -179,7 +179,7 @@ export default function GameScreen({ kidId, onBack }: Props) {
 
           {/* Progress Bar */}
           <div 
-            className="w-full h-[clamp(65px,10vh,100px)] bg-white rounded-full shrink-0 relative box-border border-2 border-[#333] p-2 shadow-[0_2px_0_#333]"
+            className="w-full h-[clamp(54px,8.5vh,82px)] bg-white rounded-full shrink-0 relative box-border border-2 border-[#333] p-[6px] shadow-[0_2px_0_#333]"
           >
             <div className="w-full h-full rounded-full overflow-hidden bg-white">
               <div 
@@ -318,7 +318,7 @@ function TaskButton({ task, isCompleted, isReady, onClick }: TaskButtonProps) {
           setIsPressed(false);
           controls.start({ y: 0, boxShadow: "0px 4px 0px #333" });
         }}
-        className={`w-[clamp(65px,20vw,100px)] h-[clamp(65px,20vw,100px)] rounded-full border border-[#333] ${isCompleted ? 'bg-white' : 'bg-[#fcf9f2]'} flex items-center justify-center p-1 sm:p-1.5 touch-none shrink-0`}
+        className={`w-[clamp(48px,min(18vw,14vh),90px)] h-[clamp(48px,min(18vw,14vh),90px)] rounded-full border border-[#333] ${isCompleted ? 'bg-white' : 'bg-[#fcf9f2]'} flex items-center justify-center p-[clamp(3px,1vw,6px)] touch-none shrink-0`}
       >
         <img 
           src={isCompleted ? task.iconOn : task.iconOff} 
@@ -330,7 +330,7 @@ function TaskButton({ task, isCompleted, isReady, onClick }: TaskButtonProps) {
           }}
         />
       </motion.button>
-      <span className="block text-[clamp(10px,2.5vw,14px)] font-bold text-[#333] mt-1 text-center leading-tight whitespace-pre-line px-1 h-[clamp(24px,6vw,32px)] flex items-center justify-center w-full">
+      <span className="block text-[clamp(10px,min(2.5vw,2vh),14px)] font-bold text-[#333] mt-1 text-center leading-tight whitespace-pre-line px-1 min-h-[20px] flex items-center justify-center w-full">
         {task.title}
       </span>
     </div>

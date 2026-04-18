@@ -10,29 +10,12 @@ interface Props {
 }
 
 export default function HomeScreen({ onSelectKid }: Props) {
-  const { profile } = useUser();
+  const { role, stars, loading } = useUser();
   const [animatingKid, setAnimatingKid] = useState<KidId | null>(null);
-  const [stars, setStars] = useState<Record<KidId, number>>({
-    yuvali: 0,
-    maayani: 0,
-    palgi: 0
-  });
 
   useEffect(() => {
     const metaThemeColor = document.querySelector('meta[name="theme-color"]');
     if (metaThemeColor) metaThemeColor.setAttribute('content', '#C5E9F1');
-  }, []);
-
-  useEffect(() => {
-    // Load from local storage
-    const newStars = { ...stars };
-    (Object.keys(KIDS) as KidId[]).forEach((kidId) => {
-      const savedStars = localStorage.getItem(`stars_${kidId}`);
-      if (savedStars) {
-        newStars[kidId] = parseInt(savedStars, 10);
-      }
-    });
-    setStars(newStars);
   }, []);
 
   const handleSelect = (kidId: KidId) => {
@@ -80,25 +63,27 @@ export default function HomeScreen({ onSelectKid }: Props) {
                 {kid.name}
               </div>
               
-              <div className="flex flex-col items-center min-h-[32px]">
-                {stars[kidId] > 0 && (
-                  <div className="mt-1 flex flex-row items-center justify-center gap-1 bg-white/30 backdrop-blur-[4px] px-2 py-0.5 rounded-full border border-white/20 mix-blend-overlay">
-                    <div className="flex items-center gap-0.5">
-                      {Array.from({ length: Math.min(stars[kidId], 5) }).map((_, i) => (
-                        <svg key={i} viewBox="0 0 24 24" className="w-3.5 h-3.5">
-                          <path 
-                            d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" 
-                            fill="#ffea92"
-                            stroke="#000"
-                            strokeWidth="1.2"
-                          />
-                        </svg>
-                      ))}
-                      {stars[kidId] > 5 && <span className="text-[9px] font-black text-[#333]/70 ml-0.5">+{stars[kidId] - 5}</span>}
+              {role === 'parent' && (
+                <div className="flex flex-col items-center min-h-[32px]">
+                  {!loading && stars[kidId] > 0 && (
+                    <div className="mt-1 flex flex-row items-center justify-center gap-1 bg-white/30 backdrop-blur-[4px] px-2 py-0.5 rounded-full border border-white/20 mix-blend-overlay">
+                      <div className="flex items-center gap-0.5">
+                        {Array.from({ length: Math.min(stars[kidId], 5) }).map((_, i) => (
+                          <svg key={i} viewBox="0 0 24 24" className="w-3.5 h-3.5">
+                            <path 
+                              d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" 
+                              fill="#ffea92"
+                              stroke="#000"
+                              strokeWidth="1.2"
+                            />
+                          </svg>
+                        ))}
+                        {stars[kidId] > 5 && <span className="text-[9px] font-black text-[#333]/70 ml-0.5">+{stars[kidId] - 5}</span>}
+                      </div>
                     </div>
-                  </div>
-                )}
-              </div>
+                  )}
+                </div>
+              )}
             </div>
           );
         })}

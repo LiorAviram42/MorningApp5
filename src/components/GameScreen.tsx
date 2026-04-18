@@ -25,28 +25,19 @@ interface Props {
 }
 
 export default function GameScreen({ kidId, onBack }: Props) {
-  const { profile } = useUser();
+  const { role, tasks: globalTasks, stars: globalStars, toggleTask: toggleGlobalTask, updateStar, resetKidTasks } = useUser();
   const kid = KIDS[kidId];
-  const tasks = getTasksForKid(kidId);
-  const leftTasks = tasks.filter(t => t.side === 'left');
-  const rightTasks = tasks.filter(t => t.side === 'right');
+  const allKidTasks = getTasksForKid(kidId);
+  const leftTasks = allKidTasks.filter(t => t.side === 'left');
+  const rightTasks = allKidTasks.filter(t => t.side === 'right');
 
-  const [completedTasks, setCompletedTasks] = useState<Set<string>>(new Set());
+  const completedTasks = globalTasks[kidId] || new Set();
+  const starsCount = globalStars[kidId] || 0;
+  
   const [isReady, setIsReady] = useState(false);
-  const [stars, setStars] = useState(0);
   const [lastStarDate, setLastStarDate] = useState('');
 
   useEffect(() => {
-    const saved = localStorage.getItem(`tasks_${kidId}`);
-    if (saved) {
-      setCompletedTasks(new Set(JSON.parse(saved)));
-    }
-    
-    const savedStars = localStorage.getItem(`stars_${kidId}`);
-    if (savedStars) {
-      setStars(parseInt(savedStars, 10));
-    }
-
     const savedDate = localStorage.getItem(`lastStarDate_${kidId}`);
     if (savedDate) {
       setLastStarDate(savedDate);
@@ -58,54 +49,37 @@ export default function GameScreen({ kidId, onBack }: Props) {
     return () => clearTimeout(timer);
   }, [kidId]);
 
-  const toggleTask = (taskId: string) => {
+  const toggleTask = async (taskId: string) => {
     safeVibrate(5);
-
     sounds.playClick();
 
-    setCompletedTasks(prev => {
-      const newSet = new Set(prev);
-      let newStars = stars;
-      let newLastStarDate = lastStarDate;
+    const isCurrentlyCompleted = completedTasks.has(taskId);
+    const willBeCompleted = !isCurrentlyCompleted;
 
-      if (newSet.has(taskId)) {
-        newSet.delete(taskId);
-      } else {
-        newSet.add(taskId);
-        if (newSet.size === tasks.length) {
-          sounds.playSuccess();
-          
-          // Award star if not already awarded today
-          const today = new Date().toDateString();
-          
-          if (newLastStarDate !== today) {
-            newStars = stars + 1;
-            newLastStarDate = today;
-            
-            setStars(newStars);
-            setLastStarDate(newLastStarDate);
-            localStorage.setItem(`stars_${kidId}`, newStars.toString());
-            localStorage.setItem(`lastStarDate_${kidId}`, newLastStarDate);
-          }
-        }
-      }
+    await toggleGlobalTask(kidId, taskId, willBeCompleted);
+
+    // Auto-award star logic when completing the last task
+    if (willBeCompleted && completedTasks.size + 1 === allKidTasks.length) {
+      sounds.playSuccess();
       
-      const newCompletedTasksArray = Array.from(newSet) as string[];
-      localStorage.setItem(`tasks_${kidId}`, JSON.stringify(newCompletedTasksArray));
-      return newSet;
-    });
+      const today = new Date().toDateString();
+      if (lastStarDate !== today) {
+        const newCount = starsCount + 1;
+        setLastStarDate(today);
+        localStorage.setItem(`lastStarDate_${kidId}`, today);
+        await updateStar(kidId, newCount);
+      }
+    }
   };
 
-  const progressPct = tasks.length > 0 ? (completedTasks.size / tasks.length) * 100 : 0;
-  const isAllCompleted = completedTasks.size === tasks.length && tasks.length > 0;
+  const progressPct = allKidTasks.length > 0 ? (completedTasks.size / allKidTasks.length) * 100 : 0;
+  const isAllCompleted = completedTasks.size === allKidTasks.length && allKidTasks.length > 0;
 
-  const updateStars = async (delta: number) => {
+  const handleUpdateStars = async (delta: number) => {
     safeVibrate(5);
     sounds.playClick();
-    const newCount = Math.max(0, stars + delta);
-    
-    localStorage.setItem(`stars_${kidId}`, newCount.toString());
-    setStars(newCount);
+    const newCount = Math.max(0, starsCount + delta);
+    await updateStar(kidId, newCount);
   };
 
   const characterImg = isAllCompleted ? CHARACTERS[kidId].after : CHARACTERS[kidId].before;
@@ -125,25 +99,27 @@ export default function GameScreen({ kidId, onBack }: Props) {
           <h3 className="m-0 text-lg font-bold text-[#333] text-right min-w-[100px]">ההתארגנות של {kid.name}</h3>
 
           <div className="flex-1 flex items-center justify-center">
-            <div className="flex items-center gap-1 bg-black/5 backdrop-blur-[2px] px-3 py-1 rounded-full border border-black/5 min-h-[32px]">
-              {stars > 0 ? (
-                <div className="flex items-center gap-0.5">
-                  {Array.from({ length: Math.min(stars, 5) }).map((_, i) => (
-                    <svg key={i} viewBox="0 0 24 24" className="w-5 h-5">
-                      <path 
-                        d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" 
-                        fill="#ffbc00"
-                        stroke="#000"
-                        strokeWidth="1.2"
-                      />
-                    </svg>
-                  ))}
-                  {stars > 5 && <span className="text-xs font-black text-[#333] ml-0.5">+{stars - 5}</span>}
-                </div>
-              ) : (
-                <span className="text-[10px] font-bold text-[#333]/30">אין כוכבים עדיין</span>
-              )}
-            </div>
+            {role === 'parent' && (
+              <div className="flex items-center gap-1 bg-black/5 backdrop-blur-[2px] px-3 py-1 rounded-full border border-black/5 min-h-[32px]">
+                {starsCount > 0 ? (
+                  <div className="flex items-center gap-0.5">
+                    {Array.from({ length: Math.min(starsCount, 5) }).map((_, i) => (
+                      <svg key={i} viewBox="0 0 24 24" className="w-5 h-5">
+                        <path 
+                          d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" 
+                          fill="#ffbc00"
+                          stroke="#000"
+                          strokeWidth="1.2"
+                        />
+                      </svg>
+                    ))}
+                    {starsCount > 5 && <span className="text-xs font-black text-[#333] ml-0.5">+{starsCount - 5}</span>}
+                  </div>
+                ) : (
+                  <span className="text-[10px] font-bold text-[#333]/30">אין כוכבים עדיין</span>
+                )}
+              </div>
+            )}
           </div>
 
           <motion.button 
@@ -222,9 +198,9 @@ export default function GameScreen({ kidId, onBack }: Props) {
         {/* Reset Button */}
         <div className="flex flex-col items-center shrink-0 mt-4 mb-1 relative">
           <div className="flex items-center gap-4">
-            {profile?.role === 'parent' && (
+            {role === 'parent' && (
               <button 
-                onClick={() => updateStars(-1)}
+                onClick={() => handleUpdateStars(-1)}
                 className="w-8 h-8 rounded-full bg-white border border-[#333] flex items-center justify-center shadow-[0_3px_0_#333] active:translate-y-[2px] active:shadow-none transition-all"
               >
                 <Minus size={18} />
@@ -245,20 +221,19 @@ export default function GameScreen({ kidId, onBack }: Props) {
                   ? 'bg-[#bae1ff] text-[#333] border-[#333] cursor-pointer' 
                   : 'bg-[#fcf9f2] text-[#333]/40 border-[#333]/40 cursor-default'
               }`}
-              onClick={() => {
+              onClick={async () => {
                 if (completedTasks.size === 0) return;
                 safeVibrate(5);
                 sounds.playReset();
-                setCompletedTasks(new Set());
-                localStorage.removeItem(`tasks_${kidId}`);
+                await resetKidTasks(kidId);
               }}
             >
               {kidId === 'yuvali' ? 'התחילי מחדש' : 'התחל מחדש'}
             </motion.button>
 
-            {profile?.role === 'parent' && (
+            {role === 'parent' && (
               <button 
-                onClick={() => updateStars(1)}
+                onClick={() => handleUpdateStars(1)}
                 className="w-8 h-8 rounded-full bg-white border border-[#333] flex items-center justify-center shadow-[0_3px_0_#333] active:translate-y-[2px] active:shadow-none transition-all"
               >
                 <Plus size={18} />
@@ -267,15 +242,14 @@ export default function GameScreen({ kidId, onBack }: Props) {
           </div>
           
           <div className="h-[20px] mt-3 flex items-center justify-center">
-            {stars > 0 && profile?.role === 'parent' && (
+            {starsCount > 0 && role === 'parent' && (
               <button 
                 className="text-[10px] text-[#333]/30 underline bg-transparent border-none cursor-pointer p-0.5"
-                onClick={() => {
+                onClick={async () => {
                   safeVibrate(5);
-                  setStars(0);
                   setLastStarDate('');
-                  localStorage.removeItem(`stars_${kidId}`);
                   localStorage.removeItem(`lastStarDate_${kidId}`);
+                  await updateStar(kidId, 0);
                 }}
               >
                 איפוס כוכבים

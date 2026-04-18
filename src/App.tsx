@@ -10,10 +10,11 @@ import GameScreen from './components/GameScreen';
 import InstallPrompt from './components/InstallPrompt';
 import { KidId } from './types';
 import { KIDS } from './constants';
-import { UserProvider } from './contexts/UserContext';
+import { useUser, UserProvider } from './contexts/UserContext';
 import { ErrorBoundary } from './components/ErrorBoundary';
 
 function AppContent() {
+  const { resetKidTasks } = useUser();
   const [screen, setScreen] = useState<'splash' | 'home' | 'game'>('splash');
   const [selectedKid, setSelectedKid] = useState<KidId | null>(null);
 
@@ -33,21 +34,21 @@ function AppContent() {
   }, [screen]);
 
   useEffect(() => {
-    const checkDailyReset = () => {
+    const checkDailyReset = async () => {
       const today = new Date().toDateString();
       const savedDate = localStorage.getItem('appDate');
       
       if (savedDate !== today) {
-        // Reset local storage
-        localStorage.removeItem('tasks_yuvali');
-        localStorage.removeItem('tasks_maayani');
-        localStorage.removeItem('tasks_palgi');
+        // Reset Supabase tasks for everyone
+        for (const kidId of Object.keys(KIDS) as KidId[]) {
+          await resetKidTasks(kidId);
+        }
         localStorage.setItem('appDate', today);
       }
     };
     
     checkDailyReset();
-  }, []);
+  }, [resetKidTasks]);
 
   const handleSplashFinish = useCallback(() => {
     console.log("Splash finished, moving to home");

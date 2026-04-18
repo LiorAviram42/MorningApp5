@@ -1,54 +1,54 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import PinScreen from '../components/PinScreen';
+import { useSupabaseSync, SyncedTasks, SyncedStars } from '../hooks/useSupabaseSync';
+import { KidId } from '../types';
 
-interface UserProfile {
-  familyId: string;
-  role: 'parent' | 'child';
-  name: string;
+interface AppContextType {
+  role: 'parent' | 'child' | null;
+  setRole: (role: 'parent' | 'child' | null) => void;
+  tasks: SyncedTasks;
+  stars: SyncedStars;
+  loading: boolean;
+  toggleTask: (kidId: KidId, taskId: string, isCompletedNow: boolean) => Promise<void>;
+  updateStar: (kidId: KidId, newCount: number) => Promise<void>;
+  resetKidTasks: (kidId: KidId) => Promise<void>;
 }
 
-interface UserContextType {
-  profile: UserProfile;
-  updateProfile: (updates: Partial<UserProfile>) => void;
-}
+const AppContext = createContext<AppContextType | null>(null);
 
-const defaultProfile: UserProfile = {
-  familyId: 'local',
-  role: 'parent',
-  name: 'אורח',
+export const useUser = () => {
+  const context = useContext(AppContext);
+  if (!context) throw new Error('useUser must be used within UserProvider');
+  return context;
 };
 
-const UserContext = createContext<UserContextType>({
-  profile: defaultProfile,
-  updateProfile: () => {},
-});
-
-export const useUser = () => useContext(UserContext);
-
 export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [profile, setProfile] = useState<UserProfile>(defaultProfile);
+  const [role, setRoleState] = useState<'parent' | 'child' | null>(null);
+  const syncProps = useSupabaseSync();
 
   useEffect(() => {
-    const saved = localStorage.getItem('local_profile');
+    const saved = localStorage.getItem('role') as 'parent' | 'child' | null;
     if (saved) {
-      try {
-        setProfile(JSON.parse(saved));
-      } catch (e) {
-        console.error("Failed to parse local profile", e);
-      }
+      setRoleState(saved);
     }
   }, []);
 
-  const updateProfile = (updates: Partial<UserProfile>) => {
-    setProfile(prev => {
-      const newProfile = { ...prev, ...updates };
-      localStorage.setItem('local_profile', JSON.stringify(newProfile));
-      return newProfile;
-    });
+  const setRole = (newRole: 'parent' | 'child' | null) => {
+    if (newRole) {
+      localStorage.setItem('role', newRole);
+    } else {
+      localStorage.removeItem('role');
+    }
+    setRoleState(newRole);
   };
 
+  if (role === null) {
+    return <PinScreen onLogin={setRole} />;
+  }
+
   return (
-    <UserContext.Provider value={{ profile, updateProfile }}>
+    <AppContext.Provider value={{ role, setRole, ...syncProps }}>
       {children}
-    </UserContext.Provider>
+    </AppContext.Provider>
   );
 };

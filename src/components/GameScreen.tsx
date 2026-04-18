@@ -99,27 +99,25 @@ export default function GameScreen({ kidId, onBack }: Props) {
           <h3 className="m-0 text-lg font-bold text-[#333] text-right min-w-[100px]">ההתארגנות של {kid.name}</h3>
 
           <div className="flex-1 flex items-center justify-center">
-            {role === 'parent' && (
-              <div className="flex items-center gap-1 bg-black/5 backdrop-blur-[2px] px-3 py-1 rounded-full border border-black/5 min-h-[32px]">
-                {starsCount > 0 ? (
-                  <div className="flex items-center gap-0.5">
-                    {Array.from({ length: Math.min(starsCount, 5) }).map((_, i) => (
-                      <svg key={i} viewBox="0 0 24 24" className="w-5 h-5">
-                        <path 
-                          d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" 
-                          fill="#ffbc00"
-                          stroke="#000"
-                          strokeWidth="1.2"
-                        />
-                      </svg>
-                    ))}
-                    {starsCount > 5 && <span className="text-xs font-black text-[#333] ml-0.5">+{starsCount - 5}</span>}
-                  </div>
-                ) : (
-                  <span className="text-[10px] font-bold text-[#333]/30">אין כוכבים עדיין</span>
-                )}
-              </div>
-            )}
+            <div className="flex items-center gap-1 bg-black/5 backdrop-blur-[2px] px-3 py-1 rounded-full border border-black/5 min-h-[32px]">
+              {starsCount > 0 ? (
+                <div className="flex items-center gap-0.5">
+                  {Array.from({ length: Math.min(starsCount, 5) }).map((_, i) => (
+                    <svg key={i} viewBox="0 0 24 24" className="w-5 h-5">
+                      <path 
+                        d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" 
+                        fill="#ffbc00"
+                        stroke="#000"
+                        strokeWidth="1.2"
+                      />
+                    </svg>
+                  ))}
+                  {starsCount > 5 && <span className="text-xs font-black text-[#333] ml-0.5">+{starsCount - 5}</span>}
+                </div>
+              ) : (
+                <span className="text-[10px] font-bold text-[#333]/30">אין כוכבים עדיין</span>
+              )}
+            </div>
           </div>
 
           <motion.button 
@@ -138,55 +136,50 @@ export default function GameScreen({ kidId, onBack }: Props) {
           </motion.button>
         </div>
 
-        <div className="flex-1 flex flex-col w-full my-0 min-h-0 pt-1 pb-1">
-          {/* Main Grid Content Area - Scrollable but hides scrollbar */}
-          <div className="flex-1 w-full min-h-0 relative overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-            <div className="grid grid-cols-[1fr_minmax(120px,2fr)_1fr] h-full w-full items-center justify-items-center gap-1 sm:gap-2">
-              
-              {/* Right Tasks */}
-              <div className="flex flex-col justify-evenly h-full w-full items-center py-1 min-h-[250px]">
-                {rightTasks.map((t) => (
-                  <TaskButton 
-                    key={t.id} 
-                    task={t} 
-                    isCompleted={completedTasks.has(t.id)} 
-                    isReady={isReady}
-                    onClick={() => toggleTask(t.id)} 
-                  />
-                ))}
-              </div>
-
-              {/* Character */}
-              <div className="flex flex-col justify-center items-center w-full h-full min-h-0">
-                <img 
-                  src={characterImg} 
-                  alt="Character" 
-                  className="max-w-full max-h-[140px] sm:max-h-[180px] md:max-h-[220px] object-contain transition-opacity duration-300 pointer-events-none drop-shadow-sm"
-                  onError={(e) => {
-                    e.currentTarget.src = `https://api.dicebear.com/7.x/fun-emoji/svg?seed=${kid.name}${isAllCompleted ? 'happy' : 'sleepy'}`;
-                  }}
+        <div className="flex-1 flex flex-col w-full my-0 min-h-0">
+          <div className="flex justify-between items-center w-full flex-1 relative min-h-0">
+            {/* Right Tasks */}
+            <div className="flex flex-col justify-evenly h-full flex-[0_0_80px] z-10 py-0.5">
+              {rightTasks.map((t) => (
+                <TaskButton 
+                  key={t.id} 
+                  task={t} 
+                  isCompleted={completedTasks.has(t.id)} 
+                  isReady={isReady}
+                  onClick={() => toggleTask(t.id)} 
                 />
-              </div>
+              ))}
+            </div>
 
-              {/* Left Tasks */}
-              <div className="flex flex-col justify-evenly h-full w-full items-center py-1 min-h-[250px]">
-                {leftTasks.map((t) => (
-                  <TaskButton 
-                    key={t.id} 
-                    task={t} 
-                    isCompleted={completedTasks.has(t.id)} 
-                    isReady={isReady}
-                    onClick={() => toggleTask(t.id)} 
-                  />
-                ))}
-              </div>
+            {/* Character */}
+            <div className="flex-1 h-full flex flex-col justify-center items-center absolute top-0 left-0 w-full z-0 pointer-events-none">
+              <img 
+                src={characterImg} 
+                alt="Character" 
+                className="max-w-[75%] max-h-[75%] object-contain transition-opacity duration-300"
+                onError={(e) => {
+                  e.currentTarget.src = `https://api.dicebear.com/7.x/fun-emoji/svg?seed=${kid.name}${isAllCompleted ? 'happy' : 'sleepy'}`;
+                }}
+              />
+            </div>
 
+            {/* Left Tasks */}
+            <div className="flex flex-col justify-evenly h-full flex-[0_0_80px] z-10 py-0.5">
+              {leftTasks.map((t) => (
+                <TaskButton 
+                  key={t.id} 
+                  task={t} 
+                  isCompleted={completedTasks.has(t.id)} 
+                  isReady={isReady}
+                  onClick={() => toggleTask(t.id)} 
+                />
+              ))}
             </div>
           </div>
 
           {/* Progress Bar */}
           <div 
-            className="w-full h-[36px] sm:h-[48px] md:h-[56px] bg-white rounded-full shrink-0 relative box-border border-2 border-[#333] p-1 shadow-[0_2px_0_#333] mt-2 mb-1"
+            className="w-full h-[64px] bg-white rounded-full shrink-0 relative box-border border-2 border-[#333] p-1.5 mt-[-4px]"
           >
             <div className="w-full h-full rounded-full overflow-hidden bg-white">
               <div 

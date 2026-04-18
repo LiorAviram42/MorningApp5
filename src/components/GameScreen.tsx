@@ -136,10 +136,10 @@ export default function GameScreen({ kidId, onBack }: Props) {
           </motion.button>
         </div>
 
-        <div className="flex-1 flex flex-col w-full my-0 min-h-0">
-          <div className="flex justify-between items-center w-full flex-1 relative min-h-0">
+        <div className="flex-1 flex flex-col w-full my-0 min-h-0 gap-2 sm:gap-3 lg:gap-4">
+          <div className="flex-1 grid grid-cols-[clamp(75px,22vw,110px)_1fr_clamp(75px,22vw,110px)] items-stretch justify-items-center w-full min-h-0 relative">
             {/* Right Tasks */}
-            <div className="flex flex-col justify-evenly h-full flex-[0_0_80px] z-10 py-0.5">
+            <div className="flex flex-col justify-evenly h-full w-full items-center z-10 py-0.5">
               {rightTasks.map((t) => (
                 <TaskButton 
                   key={t.id} 
@@ -152,11 +152,11 @@ export default function GameScreen({ kidId, onBack }: Props) {
             </div>
 
             {/* Character */}
-            <div className="flex-1 h-full flex flex-col justify-center items-center absolute top-0 left-0 w-full z-0 pointer-events-none">
+            <div className="flex flex-col justify-center items-center h-full w-full min-h-0 z-0 pointer-events-none px-1 sm:px-2">
               <img 
                 src={characterImg} 
                 alt="Character" 
-                className="max-w-[75%] max-h-[75%] object-contain transition-opacity duration-300"
+                className="max-w-full max-h-[85%] object-contain transition-opacity duration-300 drop-shadow-sm"
                 onError={(e) => {
                   e.currentTarget.src = `https://api.dicebear.com/7.x/fun-emoji/svg?seed=${kid.name}${isAllCompleted ? 'happy' : 'sleepy'}`;
                 }}
@@ -164,7 +164,7 @@ export default function GameScreen({ kidId, onBack }: Props) {
             </div>
 
             {/* Left Tasks */}
-            <div className="flex flex-col justify-evenly h-full flex-[0_0_80px] z-10 py-0.5">
+            <div className="flex flex-col justify-evenly h-full w-full items-center z-10 py-0.5">
               {leftTasks.map((t) => (
                 <TaskButton 
                   key={t.id} 
@@ -179,7 +179,7 @@ export default function GameScreen({ kidId, onBack }: Props) {
 
           {/* Progress Bar */}
           <div 
-            className="w-full h-[64px] bg-white rounded-full shrink-0 relative box-border border-2 border-[#333] p-1.5 mt-[-4px]"
+            className="w-full h-[clamp(40px,8vw,64px)] bg-white rounded-full shrink-0 relative box-border border-2 border-[#333] p-1.5 shadow-[0_2px_0_#333]"
           >
             <div className="w-full h-full rounded-full overflow-hidden bg-white">
               <div 
@@ -309,7 +309,7 @@ function TaskButton({ task, isCompleted, isReady, onClick }: TaskButtonProps) {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center w-full max-w-[85px] shrink-0">
+    <div className="flex flex-col items-center justify-center w-full">
       <motion.button 
         animate={controls}
         onPointerDown={handlePointerDown}
@@ -318,7 +318,7 @@ function TaskButton({ task, isCompleted, isReady, onClick }: TaskButtonProps) {
           setIsPressed(false);
           controls.start({ y: 0, boxShadow: "0px 4px 0px #333" });
         }}
-        className={`w-[13vw] h-[13vw] min-w-[50px] min-h-[50px] max-w-[75px] max-h-[75px] rounded-full border border-[#333] ${isCompleted ? 'bg-white' : 'bg-[#fcf9f2]'} flex items-center justify-center p-0.5 touch-none shrink-0`}
+        className={`w-[clamp(55px,16vw,90px)] h-[clamp(55px,16vw,90px)] rounded-full border border-[#333] ${isCompleted ? 'bg-white' : 'bg-[#fcf9f2]'} flex items-center justify-center p-[clamp(2px,1vw,8px)] touch-none shrink-0`}
       >
         <img 
           src={isCompleted ? task.iconOn : task.iconOff} 
@@ -330,7 +330,7 @@ function TaskButton({ task, isCompleted, isReady, onClick }: TaskButtonProps) {
           }}
         />
       </motion.button>
-      <span className="block text-[10px] sm:text-[12px] font-bold text-[#333] mt-1 text-center leading-tight whitespace-pre-line px-1 h-[28px] flex items-center justify-center w-full">
+      <span className="block text-[clamp(10px,2.5vw,14px)] font-bold text-[#333] mt-1 text-center leading-tight whitespace-pre-line px-1 h-[clamp(24px,6vw,32px)] flex items-center justify-center w-full">
         {task.title}
       </span>
     </div>

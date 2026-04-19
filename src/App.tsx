@@ -33,23 +33,6 @@ function AppContent() {
     }
   }, [screen]);
 
-  useEffect(() => {
-    const checkDailyReset = async () => {
-      const today = new Date().toDateString();
-      const savedDate = localStorage.getItem('appDate');
-      
-      if (savedDate !== today) {
-        // Reset Supabase tasks for everyone
-        for (const kidId of Object.keys(KIDS) as KidId[]) {
-          await resetKidTasks(kidId);
-        }
-        localStorage.setItem('appDate', today);
-      }
-    };
-    
-    checkDailyReset();
-  }, [resetKidTasks]);
-
   const handleSplashFinish = useCallback(() => {
     console.log("Splash finished, moving to home");
     setScreen('home');

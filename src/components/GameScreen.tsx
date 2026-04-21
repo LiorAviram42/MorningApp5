@@ -6,18 +6,45 @@ import { sounds, safeVibrate } from '../utils/sounds';
 import { Home, Plus, Minus } from 'lucide-react';
 import { useUser } from '../contexts/UserContext';
 
-import charYuvaliBefore from '/character_yuvali_before.png';
-import charYuvaliAfter from '/character_yuvali_after.png';
-import charMaayaniBefore from '/character_maayani_before.png';
-import charMaayaniAfter from '/character_maayani_after.png';
-import charPalgiBefore from '/character_palgi_before.png';
-import charPalgiAfter from '/character_palgi_after.png';
-
-const CHARACTERS: Record<string, { before: string, after: string }> = {
-  yuvali: { before: charYuvaliBefore, after: charYuvaliAfter },
-  maayani: { before: charMaayaniBefore, after: charMaayaniAfter },
-  palgi: { before: charPalgiBefore, after: charPalgiAfter }
+export type LayerConfig = {
+  taskId: string;
+  layerName: string;
+  blendMode?: React.CSSProperties['mixBlendMode'];
+  exactFileName?: string;
+  hideWhenOff?: boolean;
 };
+
+const CHARACTER_LAYERS: Record<KidId, LayerConfig[]> = {
+  yuvali: [
+    { taskId: 'clothes', layerName: 'Cloths' },
+    { taskId: 'hair', layerName: 'Hair_Shadow', blendMode: 'multiply', exactFileName: 'Hair_Shadow.png', hideWhenOff: true },
+    { taskId: 'hair', layerName: 'Hair' },
+    { taskId: 'shoes', layerName: 'Shoes' },
+    { taskId: 'face', layerName: 'Eyes' },
+    { taskId: 'teeth', layerName: 'Mouth' },
+  ],
+  maayani: [
+    { taskId: 'clothes', layerName: 'Cloths' },
+    { taskId: 'shoes', layerName: 'Shoes' },
+    { taskId: 'face', layerName: 'Face' },
+    { taskId: 'teeth', layerName: 'Teeth' },
+  ],
+  pelegi: [
+    { taskId: 'hair', layerName: 'Hair' },
+    { taskId: 'clothes', layerName: 'Cloths' },
+    { taskId: 'shoes', layerName: 'Shoes' },
+    { taskId: 'face', layerName: 'Eyes' },
+    { taskId: 'teeth', layerName: 'Mouth' },
+  ]
+};
+
+const SPARKLES = Array.from({ length: 18 }).map((_, i) => ({
+  id: i,
+  left: 20 + Math.random() * 60, // 20% to 80% (centered over character width)
+  top: 30 + Math.random() * 45, // 30% to 75% (avoids the top title area and bottom)
+  size: 10 + Math.random() * 15, // 10px to 25px
+  delay: Math.random() * 4, // 0s to 4s delay for a longer loop stagger
+}));
 
 interface Props {
   kidId: KidId;
@@ -82,7 +109,7 @@ export default function GameScreen({ kidId, onBack }: Props) {
     await updateStar(kidId, newCount);
   };
 
-  const characterImg = isAllCompleted ? CHARACTERS[kidId].after : CHARACTERS[kidId].before;
+  const kidLayers = CHARACTER_LAYERS[kidId];
 
   return (
     <div className="flex flex-col h-full w-full p-[15px] box-border relative overflow-hidden safe-area-inset">
@@ -152,15 +179,53 @@ export default function GameScreen({ kidId, onBack }: Props) {
             </div>
 
             {/* Character */}
-            <div className="flex flex-col justify-center items-center h-full w-full min-h-0 z-0 pointer-events-none relative">
-              <img 
-                src={characterImg} 
-                alt="Character" 
-                className="w-full h-full object-contain scale-[1.4] sm:scale-[1.5] origin-center transition-opacity duration-300 drop-shadow-sm pointer-events-none"
-                onError={(e) => {
-                  e.currentTarget.src = `https://api.dicebear.com/7.x/fun-emoji/svg?seed=${kid.name}${isAllCompleted ? 'happy' : 'sleepy'}`;
-                }}
-              />
+            <div className="flex flex-col justify-center items-center h-full w-full min-h-0 z-0 pointer-events-none relative scale-[1.4] sm:scale-[1.5] origin-center">
+              {kidLayers.map(({ taskId, layerName, blendMode, exactFileName, hideWhenOff }, index) => {
+                const isTaskCompleted = completedTasks.has(taskId);
+                const layerState = isTaskCompleted ? 'On' : 'Off';
+                const imgSrc = exactFileName 
+                  ? `/summer/${kidId}/${exactFileName}` 
+                  : `/summer/${kidId}/${layerName}_${layerState}.png`;
+
+                if (hideWhenOff && !isTaskCompleted) {
+                  return null;
+                }
+                
+                return (
+                  <img 
+                    key={layerName}
+                    src={imgSrc} 
+                    alt={`${layerName} ${layerState}`} 
+                    className={`w-full h-full object-contain transition-opacity duration-300 pointer-events-none ${index === 0 ? 'relative' : 'absolute inset-0'}`}
+                    style={blendMode ? { mixBlendMode: blendMode } : {}}
+                  />
+                );
+              })}
+
+              {/* Completion Sparkles */}
+              {isAllCompleted && SPARKLES.map((sparkle) => (
+                <motion.div
+                  key={sparkle.id}
+                  animate={{ 
+                    opacity: [0, 1, 1, 0, 0], 
+                    y: [0, -5, -10, -15, -15], 
+                    scale: [0, 1, 1, 0.5, 0] 
+                  }}
+                  transition={{ 
+                    duration: 4, 
+                    delay: sparkle.delay, 
+                    repeat: Infinity, 
+                    times: [0, 0.05, 0.15, 0.25, 1], // Stays at full opacity for 400ms so it registers as solid white
+                    ease: "easeInOut" 
+                  }}
+                  className="absolute pointer-events-none z-20"
+                  style={{ left: `${sparkle.left}%`, top: `${sparkle.top}%`, width: sparkle.size, height: sparkle.size }}
+                >
+                  <svg viewBox="0 0 24 24" fill="#FFFFFF" className="w-full h-full">
+                    <path d="M12 0C12 6.6 17.4 12 24 12C17.4 12 12 17.4 12 24C12 17.4 6.6 12 0 12C6.6 12 12 6.6 12 0Z" />
+                  </svg>
+                </motion.div>
+              ))}
             </div>
 
             {/* Left Tasks */}
@@ -183,7 +248,7 @@ export default function GameScreen({ kidId, onBack }: Props) {
           >
             <div className="w-full h-full rounded-full overflow-hidden bg-white">
               <div 
-                className="h-full rounded-full transition-all duration-600 ease-[cubic-bezier(0.175,0.885,0.32,1.275)]"
+                className="h-full rounded-full transition-all duration-500 ease-[cubic-bezier(0.175,0.885,0.32,1.275)]"
                 style={{ 
                   width: `${progressPct}%`, 
                   backgroundImage: kid.gradient 

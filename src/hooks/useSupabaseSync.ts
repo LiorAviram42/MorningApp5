@@ -11,37 +11,82 @@ export interface SyncedStars {
   [kidId: string]: number;
 }
 
+const loadCachedTasks = (): SyncedTasks => {
+  try {
+    const cached = localStorage.getItem('cachedTasks');
+    if (cached) {
+      const parsed = JSON.parse(cached);
+      return {
+        yuvali: new Set(parsed.yuvali || []),
+        maayani: new Set(parsed.maayani || []),
+        pelegi: new Set(parsed.pelegi || [])
+      };
+    }
+  } catch (e) {
+    console.error("Failed to load cached tasks", e);
+  }
+  return { yuvali: new Set(), maayani: new Set(), pelegi: new Set() };
+};
+
+const loadCachedStars = (): SyncedStars => {
+  try {
+    const cached = localStorage.getItem('cachedStars');
+    if (cached) {
+      return JSON.parse(cached);
+    }
+  } catch (e) {
+    console.error("Failed to load cached stars", e);
+  }
+  return { yuvali: 0, maayani: 0, pelegi: 0 };
+};
+
 export function useSupabaseSync() {
-  const [tasks, setTasks] = useState<SyncedTasks>({ yuvali: new Set(), maayani: new Set(), palgi: new Set() });
-  const [stars, setStars] = useState<SyncedStars>({ yuvali: 0, maayani: 0, palgi: 0 });
+  const [tasks, setTasks] = useState<SyncedTasks>(loadCachedTasks());
+  const [stars, setStars] = useState<SyncedStars>(loadCachedStars());
   const [loading, setLoading] = useState(true);
+
+  // Save to cache whenever tasks change
+  useEffect(() => {
+    const serializedTasks = {
+      yuvali: Array.from(tasks.yuvali),
+      maayani: Array.from(tasks.maayani),
+      pelegi: Array.from(tasks.pelegi)
+    };
+    localStorage.setItem('cachedTasks', JSON.stringify(serializedTasks));
+  }, [tasks]);
+
+  // Save to cache whenever stars change
+  useEffect(() => {
+    localStorage.setItem('cachedStars', JSON.stringify(stars));
+  }, [stars]);
 
   // Initialize and load
   useEffect(() => {
     const fetchInitialData = async () => {
-      // Fetch tasks
-      const { data: tasksData } = await supabase.from('tasks').select('*');
-      const newTasks: SyncedTasks = { yuvali: new Set(), maayani: new Set(), palgi: new Set() };
-      if (tasksData) {
+      // Fetch tasks safely
+      const { data: tasksData, error: tasksError } = await supabase.from('tasks').select('*');
+      if (!tasksError && tasksData) {
+        const newTasks: SyncedTasks = { yuvali: new Set(), maayani: new Set(), pelegi: new Set() };
         tasksData.forEach((row: any) => {
           if (row.is_completed && newTasks[row.child_name]) {
             newTasks[row.child_name].add(row.task_name);
           }
         });
+        setTasks(newTasks);
       }
-      setTasks(newTasks);
 
-      // Fetch stars
-      const { data: starsData } = await supabase.from('stars').select('*');
-      const newStars: SyncedStars = { yuvali: 0, maayani: 0, palgi: 0 };
-      if (starsData) {
+      // Fetch stars safely
+      const { data: starsData, error: starsError } = await supabase.from('stars').select('*');
+      if (!starsError && starsData) {
+        const newStars: SyncedStars = { yuvali: 0, maayani: 0, pelegi: 0 };
         starsData.forEach((row: any) => {
           if (newStars[row.child_name] !== undefined) {
             newStars[row.child_name] = row.star_count;
           }
         });
+        setStars(newStars);
       }
-      setStars(newStars);
+      
       setLoading(false);
     };
 

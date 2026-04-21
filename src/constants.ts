@@ -1,33 +1,33 @@
 import { KidConfig, KidId, Task } from './types';
 
-const profileYuvali = './profile_yuvali.png';
-const profileMaayani = './profile_maayani.png';
-const profilePalgi = './profile_palgi.png';
+const profileYuvali = '/Icons/profile_yuvali.png';
+const profileMaayani = '/Icons/profile_maayani.png';
+const profilePelegi = '/Icons/profile_pelegi.png';
 
-const teethOff = './icon_teeth_off.png';
-const teethOn = './icon_teeth_on.png';
-const hairOff = './icon_hair_off.png';
-const hairOn = './icon_hair_on.png';
-const toiletOff = './icon_toilet_off.png';
-const toiletOn = './icon_toilet_on.png';
-const clothesOff = './icon_clothes_off.png';
-const clothesOn = './icon_clothes_on.png';
-const shoesOff = './icon_shoes_off.png';
-const shoesOn = './icon_shoes_on.png';
-const cerealOff = './icon_cereal_off.png';
-const cerealOn = './icon_cereal_on.png';
-const bagOff = './icon_bag_off.png';
-const bagOn = './icon_bag_on.png';
+const teethOff = '/Icons/icon_teeth_off.png';
+const teethOn = '/Icons/icon_teeth_on.png';
+const hairOff = '/Icons/icon_hair_off.png';
+const hairOn = '/Icons/icon_hair_on.png';
+const toiletOff = '/Icons/icon_toilet_off.png';
+const toiletOn = '/Icons/icon_toilet_on.png';
+const clothesOff = '/Icons/icon_clothes_off.png';
+const clothesOn = '/Icons/icon_clothes_on.png';
+const shoesOff = '/Icons/icon_shoes_off.png';
+const shoesOn = '/Icons/icon_shoes_on.png';
+const cerealOff = '/Icons/icon_cereal_off.png';
+const cerealOn = '/Icons/icon_cereal_on.png';
+const bagOff = '/Icons/icon_bag_off.png';
+const bagOn = '/Icons/icon_bag_on.png';
 
-const faceYuvaliOff = './icon_face_yuvali_off.png';
-const faceYuvaliOn = './icon_face_yuvali_on.png';
-const faceMaayaniOff = './icon_face_maayani_off.png';
-const faceMaayaniOn = './icon_face_maayani_on.png';
-const facePelegiOff = './icon_face_pelegi_off.png';
-const facePelegiOn = './icon_face_pelegi_on.png';
+const faceYuvaliOff = '/Icons/icon_face_yuvali_off.png';
+const faceYuvaliOn = '/Icons/icon_face_yuvali_on.png';
+const faceMaayaniOff = '/Icons/icon_face_maayani_off.png';
+const faceMaayaniOn = '/Icons/icon_face_maayani_on.png';
+const facePelegiOff = '/Icons/icon_face_pelegi_off.png';
+const facePelegiOn = '/Icons/icon_face_pelegi_on.png';
 
-const diaperOff = './icon_diaper_off.png';
-const diaperOn = './icon_diaper_on.png';
+const diaperOff = '/Icons/icon_diaper_off.png';
+const diaperOn = '/Icons/icon_diaper_on.png';
 
 export const KIDS: Record<KidId, KidConfig> = {
   yuvali: {
@@ -44,10 +44,10 @@ export const KIDS: Record<KidId, KidConfig> = {
     gradient: 'linear-gradient(to right, #bae1ff, #d0f4de)',
     outlineColor: '#bae1ff',
   },
-  palgi: {
-    id: 'palgi',
+  pelegi: {
+    id: 'pelegi',
     name: 'פלגי',
-    profileImg: profilePalgi,
+    profileImg: profilePelegi,
     gradient: 'linear-gradient(to right, #d0f4de, #f2f2c2)',
     outlineColor: '#d0f4de',
   },
@@ -75,7 +75,7 @@ export const getTasksForKid = (kidId: KidId): Task[] => {
     } else if (kidId === 'maayani') {
       faceTask.iconOff = faceMaayaniOff;
       faceTask.iconOn = faceMaayaniOn;
-    } else if (kidId === 'palgi') {
+    } else if (kidId === 'pelegi') {
       faceTask.iconOff = facePelegiOff;
       faceTask.iconOn = facePelegiOn;
     }
@@ -85,7 +85,7 @@ export const getTasksForKid = (kidId: KidId): Task[] => {
     tasks = tasks.filter(t => t.id !== 'hair');
     const clothesTask = tasks.find(t => t.id === 'clothes');
     if (clothesTask) clothesTask.side = 'right';
-  } else if (kidId === 'palgi') {
+  } else if (kidId === 'pelegi') {
     tasks = tasks.filter(t => t.id !== 'bag');
     const toiletTask = tasks.find(t => t.id === 'toilet');
     if (toiletTask) {

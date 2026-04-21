@@ -1,5 +1,4 @@
 import React, { useEffect, useState, useRef } from 'react';
-const splashImg = './splash_screen.png';
 
 interface Props {
   onFinish: () => void;
@@ -8,6 +7,9 @@ interface Props {
 export default function SplashScreen({ onFinish }: Props) {
   const [visible, setVisible] = useState(true);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  
+  // Use summer splash screen
+  const splashImg = '/Icons/splash_screen_summer.png';
 
   useEffect(() => {
     const timer1 = setTimeout(() => {

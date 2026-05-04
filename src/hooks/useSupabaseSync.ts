@@ -11,10 +11,20 @@ export interface SyncedStars {
   [kidId: string]: number;
 }
 
+const isToday = (dateString?: string) => {
+  if (!dateString) return false;
+  const date = new Date(dateString);
+  const today = new Date();
+  return date.getDate() === today.getDate() && 
+         date.getMonth() === today.getMonth() && 
+         date.getFullYear() === today.getFullYear();
+};
+
 const loadCachedTasks = (): SyncedTasks => {
   try {
+    const cachedDate = localStorage.getItem('cachedTasksDate');
     const cached = localStorage.getItem('cachedTasks');
-    if (cached) {
+    if (cached && cachedDate && isToday(cachedDate)) {
       const parsed = JSON.parse(cached);
       return {
         yuvali: new Set(parsed.yuvali || []),
@@ -53,6 +63,7 @@ export function useSupabaseSync() {
       pelegi: Array.from(tasks.pelegi)
     };
     localStorage.setItem('cachedTasks', JSON.stringify(serializedTasks));
+    localStorage.setItem('cachedTasksDate', new Date().toISOString());
   }, [tasks]);
 
   // Save to cache whenever stars change
@@ -67,8 +78,17 @@ export function useSupabaseSync() {
       const { data: tasksData, error: tasksError } = await supabase.from('tasks').select('*');
       if (!tasksError && tasksData) {
         const newTasks: SyncedTasks = { yuvali: new Set(), maayani: new Set(), pelegi: new Set() };
+        // Sort by id descending so newest task row is processed first for dupe safety
+        tasksData.sort((a: any, b: any) => b.id - a.id);
+        
+        const processed = new Set<string>();
         tasksData.forEach((row: any) => {
-          if (row.is_completed && newTasks[row.child_name]) {
+          const key = row.child_name + '_' + row.task_name;
+          if (processed.has(key)) return;
+          processed.add(key);
+
+          // Only add to completed if it's from today
+          if (row.is_completed && newTasks[row.child_name] && isToday(row.updated_at)) {
             newTasks[row.child_name].add(row.task_name);
           }
         });
@@ -84,6 +104,10 @@ export function useSupabaseSync() {
             newStars[row.child_name] = row.star_count;
           }
         });
+        setTasks((prevTasks) => {
+           // Wait, we should only set stars here. Avoid overriding tasks.
+           return prevTasks;
+        });
         setStars(newStars);
       }
       
@@ -92,16 +116,16 @@ export function useSupabaseSync() {
 
     fetchInitialData();
 
-    // Subscribe to tasks
-    const tasksSub = supabase
-      .channel('public:tasks')
+    // Subscribe to tasks and stars
+    const realtimeChannel = supabase
+      .channel('public-db-changes')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'tasks' }, (payload) => {
         const row = payload.new as any;
         if (!row || !row.child_name || !row.task_name) return;
         
         setTasks((prev) => {
           const newSet = new Set(prev[row.child_name]);
-          if (row.is_completed) {
+          if (row.is_completed && isToday(row.updated_at)) {
             newSet.add(row.task_name);
           } else {
             newSet.delete(row.task_name);
@@ -109,11 +133,6 @@ export function useSupabaseSync() {
           return { ...prev, [row.child_name]: newSet };
         });
       })
-      .subscribe();
-
-    // Subscribe to stars
-    const starsSub = supabase
-      .channel('public:stars')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'stars' }, (payload) => {
         const row = payload.new as any;
         if (!row || !row.child_name || row.star_count === undefined) return;
@@ -126,8 +145,7 @@ export function useSupabaseSync() {
       .subscribe();
 
     return () => {
-      supabase.removeChannel(tasksSub);
-      supabase.removeChannel(starsSub);
+      supabase.removeChannel(realtimeChannel);
     };
   }, []);
 
@@ -140,21 +158,35 @@ export function useSupabaseSync() {
       return { ...prev, [kidId]: newSet };
     });
 
-    // We do an UPSERT
-    await supabase.from('tasks').upsert({
-      child_name: kidId,
-      task_name: taskId,
-      is_completed: isCompletedNow
-    });
+    const currentDate = new Date().toISOString();
+    
+    // Explicit Update or Insert instead of Upsert to prevent dupes without constraint
+    const { data } = await supabase
+      .from('tasks')
+      .select('id')
+      .eq('child_name', kidId)
+      .eq('task_name', taskId)
+      .order('id', { ascending: false })
+      .limit(1);
+
+    if (data && data.length > 0) {
+      await supabase.from('tasks').update({ 
+        is_completed: isCompletedNow, 
+        updated_at: currentDate 
+      }).eq('id', data[0].id);
+    } else {
+      await supabase.from('tasks').insert({ 
+        child_name: kidId, 
+        task_name: taskId, 
+        is_completed: isCompletedNow, 
+        updated_at: currentDate 
+      });
+    }
   };
 
   const updateStar = async (kidId: KidId, newCount: number) => {
-    // Optimistically update
     setStars((prev) => ({ ...prev, [kidId]: newCount }));
-    
-    // Explicit Update or Insert
     const { data } = await supabase.from('stars').select('child_name').eq('child_name', kidId);
-    
     if (data && data.length > 0) {
       await supabase.from('stars').update({ star_count: newCount }).eq('child_name', kidId);
     } else {
@@ -162,18 +194,32 @@ export function useSupabaseSync() {
     }
   };
 
-  const resetKidTasks = async (kidId: KidId) => {
-    // Optimistically update
-    setTasks((prev) => ({ ...prev, [kidId]: new Set() }));
+  const resetKidTasks = async (kidId: KidId, specificTasksToReset?: string[]) => {
+    setTasks((prev) => {
+      const existingTasks = Array.from(prev[kidId] || []);
+      const newTasks = existingTasks.filter(t => specificTasksToReset ? !specificTasksToReset.includes(t) : false);
+      return { ...prev, [kidId]: new Set(newTasks) };
+    });
 
-    const kidTasks = getTasksForKid(kidId);
-    const updates = kidTasks.map(t => ({
-      child_name: kidId,
-      task_name: t.id,
-      is_completed: false
-    }));
+    const tasksToReset = specificTasksToReset || getTasksForKid(kidId, 'day').map(t => `day_${t.id}`).concat(getTasksForKid(kidId, 'night').map(t => `night_${t.id}`));
+    const currentDate = new Date().toISOString();
     
-    await supabase.from('tasks').upsert(updates);
+    // Need to update each explicitly to prevent dupes
+    for (const t of tasksToReset) {
+      const { data } = await supabase
+        .from('tasks')
+        .select('id')
+        .eq('child_name', kidId)
+        .eq('task_name', t)
+        .order('id', { ascending: false })
+        .limit(1);
+
+      if (data && data.length > 0) {
+        await supabase.from('tasks').update({ is_completed: false, updated_at: currentDate }).eq('id', data[0].id);
+      } else {
+        await supabase.from('tasks').insert({ child_name: kidId, task_name: t, is_completed: false, updated_at: currentDate });
+      }
+    }
   };
 
   return {

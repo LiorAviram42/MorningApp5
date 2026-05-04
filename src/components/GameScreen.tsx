@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { KidId, Task } from '../types';
-import { KIDS, getTasksForKid } from '../constants';
+import { getKids, getTasksForKid } from '../constants';
 import { motion, useAnimation } from 'motion/react';
 import { sounds, safeVibrate } from '../utils/sounds';
 import { Home, Plus, Minus } from 'lucide-react';
 import { useUser } from '../contexts/UserContext';
+import { useTheme } from '../contexts/ThemeContext';
 
 export type LayerConfig = {
   taskId: string;
@@ -12,10 +13,11 @@ export type LayerConfig = {
   blendMode?: React.CSSProperties['mixBlendMode'];
   exactFileName?: string;
   hideWhenOff?: boolean;
+  hideWhenOn?: boolean;
 };
 
-const CHARACTER_LAYERS: Record<KidId, LayerConfig[]> = {
-  yuvali: [
+const CHARACTER_LAYERS: Record<string, LayerConfig[]> = {
+  'day_yuvali': [
     { taskId: 'clothes', layerName: 'Cloths' },
     { taskId: 'hair', layerName: 'Hair_Shadow', blendMode: 'multiply', exactFileName: 'Hair_Shadow.png', hideWhenOff: true },
     { taskId: 'hair', layerName: 'Hair' },
@@ -23,25 +25,46 @@ const CHARACTER_LAYERS: Record<KidId, LayerConfig[]> = {
     { taskId: 'face', layerName: 'Eyes' },
     { taskId: 'teeth', layerName: 'Mouth' },
   ],
-  maayani: [
+  'day_maayani': [
     { taskId: 'clothes', layerName: 'Cloths' },
     { taskId: 'shoes', layerName: 'Shoes' },
     { taskId: 'face', layerName: 'Face' },
     { taskId: 'teeth', layerName: 'Teeth' },
   ],
-  pelegi: [
+  'day_pelegi': [
     { taskId: 'hair', layerName: 'Hair' },
     { taskId: 'clothes', layerName: 'Cloths' },
     { taskId: 'shoes', layerName: 'Shoes' },
     { taskId: 'face', layerName: 'Eyes' },
     { taskId: 'teeth', layerName: 'Mouth' },
-  ]
+  ],
+  'night_yuvali': [
+    { taskId: 'hair', layerName: 'Hair_Off_Shadow', blendMode: 'multiply', exactFileName: 'Hair_Off_Shadow.png', hideWhenOn: true },
+    { taskId: 'hair', layerName: 'Hair' },
+    { taskId: 'pj', layerName: 'PJ' },
+    { taskId: 'shower', layerName: 'Shower', hideWhenOn: true },
+    { taskId: 'face', layerName: 'Face', hideWhenOn: true },
+    { taskId: 'teeth', layerName: 'Teeth' },
+  ],
+  'night_maayani': [
+    { taskId: 'pj', layerName: 'PJ' },
+    { taskId: 'shower', layerName: 'Shower', hideWhenOn: true },
+    { taskId: 'face', layerName: 'Face' },
+    { taskId: 'teeth', layerName: 'Teeth' },
+  ],
+  'night_pelegi': [
+    { taskId: 'hair', layerName: 'Hair' },
+    { taskId: 'pj', layerName: 'PJ' },
+    { taskId: 'shower', layerName: 'Shower', hideWhenOn: true },
+    { taskId: 'face', layerName: 'Face', hideWhenOn: true },
+    { taskId: 'teeth', layerName: 'Teeth' },
+  ],
 };
 
 const SPARKLES = Array.from({ length: 18 }).map((_, i) => ({
   id: i,
   left: 20 + Math.random() * 60, // 20% to 80% (centered over character width)
-  top: 30 + Math.random() * 45, // 30% to 75% (avoids the top title area and bottom)
+  top: 48 + Math.random() * 27, // 48% to 75% (moved lower to avoid the face)
   size: 10 + Math.random() * 15, // 10px to 25px
   delay: Math.random() * 4, // 0s to 4s delay for a longer loop stagger
 }));
@@ -53,8 +76,11 @@ interface Props {
 
 export default function GameScreen({ kidId, onBack }: Props) {
   const { role, tasks: globalTasks, stars: globalStars, toggleTask: toggleGlobalTask, updateStar, resetKidTasks } = useUser();
-  const kid = KIDS[kidId];
-  const allKidTasks = getTasksForKid(kidId);
+  const { theme } = useTheme();
+  
+  const kidsConfig = getKids(theme);
+  const kid = kidsConfig[kidId];
+  const allKidTasks = getTasksForKid(kidId, theme);
   const leftTasks = allKidTasks.filter(t => t.side === 'left');
   const rightTasks = allKidTasks.filter(t => t.side === 'right');
 
@@ -76,17 +102,24 @@ export default function GameScreen({ kidId, onBack }: Props) {
     return () => clearTimeout(timer);
   }, [kidId]);
 
-  const toggleTask = async (taskId: string) => {
+  const themeCompletedTasks = new Set(
+    Array.from(completedTasks)
+      .filter(t => t.startsWith(`${theme}_`))
+      .map(t => t.replace(`${theme}_`, ''))
+  );
+
+  const toggleTask = async (rawTaskId: string) => {
+    const taskId = `${theme}_${rawTaskId}`;
     safeVibrate(5);
     sounds.playClick();
 
-    const isCurrentlyCompleted = completedTasks.has(taskId);
+    const isCurrentlyCompleted = themeCompletedTasks.has(rawTaskId);
     const willBeCompleted = !isCurrentlyCompleted;
 
     await toggleGlobalTask(kidId, taskId, willBeCompleted);
 
-    // Auto-award star logic when completing the last task
-    if (willBeCompleted && completedTasks.size + 1 === allKidTasks.length) {
+    // Auto-award star logic when completing the last task for current theme
+    if (willBeCompleted && themeCompletedTasks.size + 1 === allKidTasks.length) {
       sounds.playSuccess();
       
       const today = new Date().toDateString();
@@ -99,8 +132,8 @@ export default function GameScreen({ kidId, onBack }: Props) {
     }
   };
 
-  const progressPct = allKidTasks.length > 0 ? (completedTasks.size / allKidTasks.length) * 100 : 0;
-  const isAllCompleted = completedTasks.size === allKidTasks.length && allKidTasks.length > 0;
+  const progressPct = allKidTasks.length > 0 ? (themeCompletedTasks.size / allKidTasks.length) * 100 : 0;
+  const isAllCompleted = themeCompletedTasks.size === allKidTasks.length && allKidTasks.length > 0;
 
   const handleUpdateStars = async (delta: number) => {
     safeVibrate(5);
@@ -109,7 +142,7 @@ export default function GameScreen({ kidId, onBack }: Props) {
     await updateStar(kidId, newCount);
   };
 
-  const kidLayers = CHARACTER_LAYERS[kidId];
+  const kidLayers = CHARACTER_LAYERS[`${theme}_${kidId}`] || [];
 
   return (
     <div className="flex flex-col h-full w-full p-[15px] box-border relative overflow-hidden safe-area-inset">
@@ -120,10 +153,17 @@ export default function GameScreen({ kidId, onBack }: Props) {
         initial={{ y: 15, boxShadow: "0px 0px 0px #333" }}
         animate={{ y: 0, boxShadow: "0px 8px 0px #333" }}
         transition={{ type: "spring" as const, stiffness: 500, damping: 10 }}
-        className="flex flex-col h-full w-full bg-white/75 backdrop-blur-sm rounded-3xl border border-[#333] p-2.5 box-border relative overflow-hidden z-10"
+        className={`flex flex-col h-full w-full backdrop-blur-sm rounded-3xl border border-[#333] p-2.5 box-border relative overflow-hidden z-10 ${
+          theme === 'night' ? 'bg-[#cdd1e4]/85 text-[#222]' : 'bg-white/75 text-[#333]'
+        }`}
       >
         <div className="flex flex-row justify-between items-center w-full pt-2 pb-4 border-b border-[#333]/10 shrink-0">
-          <h3 className="m-0 text-lg font-bold text-[#333] text-right min-w-[100px]">ההתארגנות של {kid.name}</h3>
+          <h3 
+            className={`m-0 text-lg font-bold text-right min-w-[100px] transition-colors duration-200 ${theme === 'night' ? 'text-[#1a1525]' : 'text-[#333]'}`}
+            style={{ transitionDelay: theme === 'night' ? '0ms' : '200ms' }}
+          >
+            ההתארגנות של {kid.name}
+          </h3>
 
           <div className="flex-1 flex items-center justify-center">
             <div className="flex items-center gap-1 bg-black/5 backdrop-blur-[2px] px-3 py-1 rounded-full border border-black/5 min-h-[32px]">
@@ -152,26 +192,28 @@ export default function GameScreen({ kidId, onBack }: Props) {
             animate={isReady ? { y: 0, boxShadow: "0px 4px 0px #333" } : { y: 4, boxShadow: "0px 0px 0px #333" }}
             whileTap={{ y: 4, boxShadow: "0px 0px 0px #333" }}
             transition={{ type: "spring" as const, stiffness: 800, damping: 15 }}
-            className="bg-[#fde4cf] text-[#333] border border-[#333] p-2 rounded-2xl cursor-pointer flex items-center justify-center min-w-[40px]"
+            className={`border border-[#333] p-2 rounded-2xl cursor-pointer flex items-center justify-center min-w-[40px] ${
+              theme === 'night' ? 'bg-[#76639c] text-white' : 'bg-[#fde4cf] text-[#333]'
+            }`}
             onClick={() => {
               safeVibrate(5);
               sounds.playBack();
               onBack();
             }}
           >
-            <Home size={24} stroke="#333" fill="#f9b88a" strokeWidth={1.5} />
+            <Home size={24} stroke={theme === 'night' ? '#2a1a45' : '#333'} fill={theme === 'night' ? '#9d8ac7' : '#f9b88a'} strokeWidth={1.5} />
           </motion.button>
         </div>
 
         <div className="flex-1 flex flex-col w-full my-0 min-h-0 gap-2 sm:gap-3 lg:gap-4">
           <div className="flex-1 grid grid-cols-[clamp(70px,24vw,110px)_1fr_clamp(70px,24vw,110px)] items-stretch justify-items-center w-full min-h-0 relative">
             {/* Right Tasks */}
-            <div className="flex flex-col justify-center gap-[clamp(4px,min(2.5vh,2vw),24px)] h-full w-full items-center z-10 py-1 min-h-0 relative">
+            <div className="flex flex-col justify-start gap-[clamp(2px,min(1.5vh,1.5vw),16px)] h-full w-full items-center z-10 py-1 min-h-0 relative mt-2">
               {rightTasks.map((t) => (
                 <TaskButton 
                   key={t.id} 
                   task={t} 
-                  isCompleted={completedTasks.has(t.id)} 
+                  isCompleted={themeCompletedTasks.has(t.id)} 
                   isReady={isReady}
                   onClick={() => toggleTask(t.id)} 
                 />
@@ -180,14 +222,31 @@ export default function GameScreen({ kidId, onBack }: Props) {
 
             {/* Character */}
             <div className="flex flex-col justify-center items-center h-full w-full min-h-0 z-0 pointer-events-none relative scale-[1.4] sm:scale-[1.5] origin-center">
-              {kidLayers.map(({ taskId, layerName, blendMode, exactFileName, hideWhenOff }, index) => {
-                const isTaskCompleted = completedTasks.has(taskId);
+              {kidLayers.map(({ taskId, layerName, blendMode, exactFileName, hideWhenOff, hideWhenOn }, index) => {
+                const isTaskCompleted = themeCompletedTasks.has(taskId);
                 const layerState = isTaskCompleted ? 'On' : 'Off';
+                const getFolderName = (themeMode: string, kidMode: string) => {
+                  if (themeMode === 'day') {
+                    if (kidMode === 'maayani') return 'Maayani_Separated';
+                    if (kidMode === 'yuvali') return 'Yuvali_Separated';
+                    if (kidMode === 'pelegi') return 'Pelegi_Separated';
+                  } else if (themeMode === 'night') {
+                    if (kidMode === 'pelegi') return 'Pelegi';
+                    return kidMode;
+                  }
+                  return kidMode;
+                };
+                
+                const folderName = getFolderName(theme, kidId);
                 const imgSrc = exactFileName 
-                  ? `/summer/${kidId}/${exactFileName}` 
-                  : `/summer/${kidId}/${layerName}_${layerState}.png`;
+                  ? `/${theme}/summer/${folderName}/${exactFileName}` 
+                  : `/${theme}/summer/${folderName}/${layerName}_${layerState}.png`;
 
                 if (hideWhenOff && !isTaskCompleted) {
+                  return null;
+                }
+                
+                if (hideWhenOn && isTaskCompleted) {
                   return null;
                 }
                 
@@ -196,7 +255,7 @@ export default function GameScreen({ kidId, onBack }: Props) {
                     key={layerName}
                     src={imgSrc} 
                     alt={`${layerName} ${layerState}`} 
-                    className={`w-full h-full object-contain transition-opacity duration-300 pointer-events-none ${index === 0 ? 'relative' : 'absolute inset-0'}`}
+                    className={`w-full h-full object-contain transition-opacity duration-300 pointer-events-none ${index === 0 ? 'relative z-0' : 'absolute inset-0 z-10'}`}
                     style={blendMode ? { mixBlendMode: blendMode } : {}}
                   />
                 );
@@ -229,12 +288,12 @@ export default function GameScreen({ kidId, onBack }: Props) {
             </div>
 
             {/* Left Tasks */}
-            <div className="flex flex-col justify-center gap-[clamp(4px,min(2.5vh,2vw),24px)] h-full w-full items-center z-10 py-1 min-h-0 relative">
+            <div className="flex flex-col justify-start gap-[clamp(2px,min(1.5vh,1.5vw),16px)] h-full w-full items-center z-10 py-1 min-h-0 relative mt-2">
               {leftTasks.map((t) => (
                 <TaskButton 
                   key={t.id} 
                   task={t} 
-                  isCompleted={completedTasks.has(t.id)} 
+                  isCompleted={themeCompletedTasks.has(t.id)} 
                   isReady={isReady}
                   onClick={() => toggleTask(t.id)} 
                 />
@@ -244,9 +303,9 @@ export default function GameScreen({ kidId, onBack }: Props) {
 
           {/* Progress Bar */}
           <div 
-            className="w-full h-[clamp(54px,8.5vh,82px)] bg-white rounded-full shrink-0 relative box-border border-2 border-[#333] p-[6px] shadow-[0_2px_0_#333]"
+            className="w-full h-[clamp(54px,8.5vh,82px)] bg-white/90 rounded-full shrink-0 relative box-border border-2 border-[#333] p-[6px] shadow-[0_2px_0_#333]"
           >
-            <div className="w-full h-full rounded-full overflow-hidden bg-white">
+            <div className="w-full h-full rounded-full overflow-hidden bg-white/75">
               <div 
                 className="h-full rounded-full transition-all duration-500 ease-[cubic-bezier(0.175,0.885,0.32,1.275)]"
                 style={{ 
@@ -273,22 +332,29 @@ export default function GameScreen({ kidId, onBack }: Props) {
             <motion.button 
               initial={{ y: 4, boxShadow: "0px 0px 0px #333" }}
               animate={
-                completedTasks.size > 0 
+                themeCompletedTasks.size > 0 
                   ? { y: 0, boxShadow: "0px 4px 0px #333" }
                   : { y: 4, boxShadow: "0px 0px 0px #333" }
               }
-              whileTap={completedTasks.size > 0 ? { y: 4, boxShadow: "0px 0px 0px #333" } : {}}
+              whileTap={themeCompletedTasks.size > 0 ? { y: 4, boxShadow: "0px 0px 0px #333" } : {}}
               transition={{ type: "spring" as const, stiffness: 800, damping: 15 }}
               className={`py-2 px-6 rounded-2xl font-bold text-sm border ${
-                completedTasks.size > 0 
+                themeCompletedTasks.size > 0 
                   ? 'bg-[#bae1ff] text-[#333] border-[#333] cursor-pointer' 
                   : 'bg-[#fcf9f2] text-[#333]/40 border-[#333]/40 cursor-default'
               }`}
               onClick={async () => {
-                if (completedTasks.size === 0) return;
+                if (themeCompletedTasks.size === 0) return;
                 safeVibrate(5);
                 sounds.playReset();
-                await resetKidTasks(kidId);
+                
+                // Only reset the tasks for the current theme
+                const remainingTasks = Array.from(completedTasks).filter(t => !t.startsWith(`${theme}_`));
+                const resetTasks = Array.from(completedTasks).filter(t => t.startsWith(`${theme}_`));
+                
+                if (resetTasks.length > 0) {
+                  await resetKidTasks(kidId, resetTasks);
+                }
               }}
             >
               {kidId === 'yuvali' ? 'התחילי מחדש' : 'התחל מחדש'}
@@ -374,7 +440,7 @@ function TaskButton({ task, isCompleted, isReady, onClick }: TaskButtonProps) {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center w-full">
+    <div className="flex flex-col items-center justify-start w-full">
       <motion.button 
         animate={controls}
         onPointerDown={handlePointerDown}
@@ -383,21 +449,23 @@ function TaskButton({ task, isCompleted, isReady, onClick }: TaskButtonProps) {
           setIsPressed(false);
           controls.start({ y: 0, boxShadow: "0px 4px 0px #333" });
         }}
-        className={`w-[clamp(48px,min(18vw,14vh),90px)] h-[clamp(48px,min(18vw,14vh),90px)] rounded-full border border-[#333] ${isCompleted ? 'bg-white' : 'bg-[#fcf9f2]'} flex items-center justify-center p-[clamp(3px,1vw,6px)] touch-none shrink-0`}
+        className={`w-[clamp(38px,min(15vw,10.5vh),75px)] h-[clamp(38px,min(15vw,10.5vh),75px)] rounded-full border border-[#333] ${isCompleted ? 'bg-white' : 'bg-[#fcf9f2]'} flex items-center justify-center p-[clamp(3px,1vw,5px)] touch-none shrink-0`}
       >
         <img 
           src={isCompleted ? task.iconOn : task.iconOff} 
           alt={task.title} 
           className="w-full h-full object-contain pointer-events-none transition-all duration-300"
-          style={!isCompleted ? { filter: 'grayscale(100%) sepia(20%) hue-rotate(350deg) brightness(115%) contrast(120%) opacity(0.7)' } : {}}
+          style={(!isCompleted && task.id !== 'sunscreen' && task.id !== 'dinner') ? { filter: 'grayscale(100%) sepia(20%) hue-rotate(350deg) brightness(115%) contrast(120%) opacity(0.7)' } : {}}
           onError={(e) => {
             e.currentTarget.src = `https://ui-avatars.com/api/?name=${task.title}&background=random&color=fff&rounded=true&size=128`;
           }}
         />
       </motion.button>
-      <span className="block text-[clamp(10px,min(2.5vw,2vh),14px)] font-bold text-[#333] mt-1 text-center leading-tight whitespace-pre-line px-1 min-h-[20px] flex items-center justify-center w-full">
-        {task.title}
-      </span>
+      <div className="h-[36px] flex items-center justify-center mt-[2px] w-full shrink-0">
+        <span className="block text-[clamp(10px,min(2.5vw,2vh),14px)] font-bold text-[#333] text-center leading-tight whitespace-pre-line px-1">
+          {task.title}
+        </span>
+      </div>
     </div>
   );
 }

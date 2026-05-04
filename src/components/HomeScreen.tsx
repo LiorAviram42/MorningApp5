@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { KIDS } from '../constants';
+import { getKids } from '../constants';
 import { KidId } from '../types';
 import { sounds, safeVibrate } from '../utils/sounds';
 import { useUser } from '../contexts/UserContext';
+import ThemeSwitch from './ThemeSwitch';
+import { useTheme } from '../contexts/ThemeContext';
 
 interface Props {
   onSelectKid: (kidId: KidId) => void;
@@ -12,11 +14,14 @@ interface Props {
 export default function HomeScreen({ onSelectKid }: Props) {
   const { role, stars, loading } = useUser();
   const [animatingKid, setAnimatingKid] = useState<KidId | null>(null);
+  const { theme } = useTheme();
 
   useEffect(() => {
     const metaThemeColor = document.querySelector('meta[name="theme-color"]');
-    if (metaThemeColor) metaThemeColor.setAttribute('content', '#C5E9F1');
-  }, []);
+    if (metaThemeColor) {
+      metaThemeColor.setAttribute('content', theme === 'night' ? '#0f173c' : '#C5E9F1');
+    }
+  }, [theme]);
 
   const handleSelect = (kidId: KidId) => {
     safeVibrate(5);
@@ -27,19 +32,31 @@ export default function HomeScreen({ onSelectKid }: Props) {
     }, 150);
   };
 
+  const kidsConfig = getKids(theme);
+
   return (
-    <div className="flex flex-col items-center h-full w-full relative overflow-hidden box-border pb-24">
+    <div className="flex flex-col items-center h-full w-full relative overflow-hidden box-border pb-12">
       {/* Subtle background pattern */}
       <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: 'radial-gradient(#333 1px, transparent 1px)', backgroundSize: '24px 24px' }} />
       
       <div className="flex-1 flex flex-col justify-center z-10 w-full">
-        <h1 className="text-5xl font-bold text-[#333] text-center drop-shadow-sm">בוקר טוב!</h1>
+        <h1 
+          className={`text-5xl font-bold text-center drop-shadow-sm transition-colors duration-200 ${theme === 'night' ? 'text-white' : 'text-[#333]'}`}
+          style={{ transitionDelay: theme === 'night' ? '0ms' : '200ms' }}
+        >
+          {theme === 'night' ? 'ערב טוב!' : 'בוקר טוב!'}
+        </h1>
       </div>
       
       <div className="flex gap-6 justify-center w-full z-10 px-4 shrink-0">
-        {(Object.keys(KIDS) as KidId[]).map((kidId) => {
-          const kid = KIDS[kidId];
+        {(Object.keys(kidsConfig) as KidId[]).map((kidId) => {
+          const kid = kidsConfig[kidId];
           const isAnimating = animatingKid === kidId;
+          
+          let nightShadow = 'shadow-[0px_4px_0px_#333]';
+          if (kidId === 'yuvali') nightShadow = 'shadow-[0px_4px_0px_#b85474]'; // Dark pastel pink
+          else if (kidId === 'maayani') nightShadow = 'shadow-[0px_4px_0px_#1e3a8a]'; // Deep blue
+          else if (kidId === 'pelegi') nightShadow = 'shadow-[0px_4px_0px_#064e3b]'; // Dark green
           
           return (
             <div 
@@ -48,18 +65,20 @@ export default function HomeScreen({ onSelectKid }: Props) {
               onClick={() => handleSelect(kidId)}
             >
               <div 
-                className={`w-[100px] h-[100px] rounded-full border border-[#333] bg-white overflow-hidden shadow-[0px_4px_0px_#333] transition-all duration-75 active:translate-y-[4px] active:shadow-none relative ${isAnimating ? 'translate-y-[4px] shadow-none' : ''}`}
+                className={`w-[100px] h-[100px] rounded-full border border-[#333] bg-white overflow-hidden transition-all duration-75 active:translate-y-[4px] active:shadow-none relative ${
+                  isAnimating ? 'translate-y-[4px] shadow-none' : (theme === 'night' ? nightShadow : 'shadow-[0px_4px_0px_#333]')
+                }`}
               >
                 <img 
                   src={kid.profileImg} 
                   alt={kid.name} 
                   className="w-full h-full object-cover"
-                  onError={(e) => {
-                    e.currentTarget.src = `https://api.dicebear.com/7.x/avataaars/svg?seed=${kid.name}&backgroundColor=b6e3f4`;
-                  }}
                 />
               </div>
-              <div className="mt-4 text-xl font-black text-[#333] tracking-tight flex items-center gap-1">
+              <div 
+                className={`mt-4 text-xl font-black tracking-tight flex items-center gap-1 transition-colors duration-200 ${theme === 'night' ? 'text-white/90' : 'text-[#333]'}`}
+                style={{ transitionDelay: theme === 'night' ? '0ms' : '200ms' }}
+              >
                 {kid.name}
               </div>
               
@@ -87,10 +106,8 @@ export default function HomeScreen({ onSelectKid }: Props) {
         })}
       </div>
 
-      <div className="flex-1 flex flex-col justify-center z-10 w-full">
-        <h2 className="text-[#333] text-2xl font-black tracking-tight text-center">
-          מוכנים? קדימה לדרך!
-        </h2>
+      <div className="flex-1 flex flex-col justify-center items-center z-10 w-full">
+        <ThemeSwitch />
       </div>
     </div>
   );

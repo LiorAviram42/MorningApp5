@@ -11,7 +11,7 @@ interface AppContextType {
   loading: boolean;
   toggleTask: (kidId: KidId, taskId: string, isCompletedNow: boolean) => Promise<void>;
   updateStar: (kidId: KidId, newCount: number) => Promise<void>;
-  resetKidTasks: (kidId: KidId) => Promise<void>;
+  resetKidTasks: (kidId: KidId, specificTasksToReset?: string[]) => Promise<void>;
 }
 
 const AppContext = createContext<AppContextType | null>(null);

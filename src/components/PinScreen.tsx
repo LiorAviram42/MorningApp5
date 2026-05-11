@@ -51,7 +51,8 @@ export default function PinScreen({ onLogin }: Props) {
 
   return (
     <div 
-      className="flex flex-col items-center justify-center h-full w-full relative overflow-hidden box-border p-4"
+      dir="rtl"
+      className="flex flex-col items-center justify-center h-[100dvh] w-full font-sans relative overflow-hidden box-border p-4"
       style={{ background: 'linear-gradient(to bottom, #C5E9F1 0%, #FDC4C1 50%, #FFFDE1 100%)' }}
     >
       {/* Subtle background pattern */}

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { KidId, Task } from "../types";
 import { getKids, getTasksForKid } from "../constants";
-import { motion, useAnimation } from "motion/react";
+import { motion, useAnimation, AnimatePresence } from "motion/react";
 import { sounds, safeVibrate } from "../utils/sounds";
 import { Plus, Minus } from "lucide-react";
 import { useUser } from "../contexts/UserContext";
@@ -107,6 +107,7 @@ export default function GameScreen({ kidId, onBack }: Props) {
   const starsCount = globalStars[kidId] || 0;
 
   const [isReady, setIsReady] = useState(false);
+  const [showStarAnimation, setShowStarAnimation] = useState(false);
 
   useEffect(() => {
     const timer = setTimeout(() => setIsReady(true), 350);
@@ -126,16 +127,17 @@ export default function GameScreen({ kidId, onBack }: Props) {
 
     const isCurrentlyCompleted = themeCompletedTasks.has(rawTaskId);
     const willBeCompleted = !isCurrentlyCompleted;
+    const isCompletingLastTask =
+      willBeCompleted && themeCompletedTasks.size + 1 === allKidTasks.length;
+
+    if (isCompletingLastTask) {
+      sounds.playSuccess();
+    }
 
     await toggleGlobalTask(kidId, taskId, willBeCompleted);
 
     // Auto-award star logic when completing the last task for current theme
-    if (
-      willBeCompleted &&
-      themeCompletedTasks.size + 1 === allKidTasks.length
-    ) {
-      sounds.playSuccess();
-
+    if (isCompletingLastTask) {
       const today = new Date().toDateString();
       const lastAwarded = localStorage.getItem(
         `lastStarDate_${theme}_${kidId}`,
@@ -143,6 +145,8 @@ export default function GameScreen({ kidId, onBack }: Props) {
       if (lastAwarded !== today) {
         const newCount = starsCount + 1;
         localStorage.setItem(`lastStarDate_${theme}_${kidId}`, today);
+        setShowStarAnimation(true);
+        setTimeout(() => setShowStarAnimation(false), 1600);
         await updateStar(kidId, newCount);
       }
     }
@@ -159,6 +163,12 @@ export default function GameScreen({ kidId, onBack }: Props) {
     safeVibrate(5);
     sounds.playClick();
     const newCount = Math.max(0, starsCount + delta);
+
+    if (delta > 0) {
+      setShowStarAnimation(true);
+      setTimeout(() => setShowStarAnimation(false), 1600);
+    }
+
     await updateStar(kidId, newCount);
   };
 
@@ -377,6 +387,7 @@ export default function GameScreen({ kidId, onBack }: Props) {
                       scale: [0, 1, 1, 0.5, 0],
                     }}
                     transition={{
+                      type: "keyframes",
                       duration: 4,
                       delay: sparkle.delay,
                       repeat: Infinity,
@@ -501,8 +512,7 @@ export default function GameScreen({ kidId, onBack }: Props) {
                 className="text-[10px] text-[#333]/30 underline bg-transparent border-none cursor-pointer p-0.5"
                 onClick={async () => {
                   safeVibrate(5);
-                  setLastStarDate("");
-                  localStorage.removeItem(`lastStarDate_${kidId}`);
+                  localStorage.removeItem(`lastStarDate_${theme}_${kidId}`);
                   await updateStar(kidId, 0);
                 }}
               >
@@ -512,6 +522,92 @@ export default function GameScreen({ kidId, onBack }: Props) {
           </div>
         </div>
       </motion.div>
+
+      <AnimatePresence>
+        {showStarAnimation && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0, transition: { duration: 0.3 } }}
+            className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none"
+          >
+            <div
+              className={`relative flex items-center justify-center ${
+                kidId === "pelegi"
+                  ? "-translate-y-4 sm:-translate-y-8"
+                  : "-translate-y-20 sm:-translate-y-24"
+              }`}
+            >
+              {/* Sparkles */}
+              {Array.from({ length: 15 }).map((_, i) => {
+                const angle = Math.random() * Math.PI * 2;
+                const distance = 80 + Math.random() * 120;
+                return (
+                  <motion.div
+                    key={i}
+                    initial={{ opacity: 0, scale: 0, x: 0, y: 0 }}
+                    animate={{
+                      opacity: [0, 1, 0],
+                      scale: [0, Math.random() * 0.6 + 0.4, 0],
+                      x: Math.cos(angle) * distance,
+                      y: Math.sin(angle) * distance,
+                      rotate: Math.random() * 180 - 90,
+                    }}
+                    transition={{
+                      type: "keyframes",
+                      duration: 0.5 + Math.random() * 0.2,
+                      ease: "easeOut",
+                      delay: 0.9 + Math.random() * 0.1,
+                    }}
+                    className="absolute w-8 h-8 text-[#ffea92]"
+                  >
+                    <svg
+                      viewBox="0 0 24 24"
+                      className="w-full h-full drop-shadow-md"
+                    >
+                      <path
+                        d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"
+                        fill="#ffea92"
+                      />
+                    </svg>
+                  </motion.div>
+                );
+              })}
+
+              {/* Main Star */}
+              <motion.div
+                initial={{ scale: 0, opacity: 0, rotate: -45 }}
+                animate={{
+                  scale: [0, 1.3, 1, 1, 2.5],
+                  opacity: [0, 1, 1, 1, 0],
+                  rotate: [-45, 0, 0, 0, 0],
+                  filter: [
+                    "drop-shadow(0px 0px 0px rgba(255, 234, 146, 0))",
+                    "drop-shadow(0px 0px 0px rgba(255, 234, 146, 0))",
+                    "drop-shadow(0px 0px 80px rgba(255, 234, 146, 1)) drop-shadow(0px 0px 40px rgba(255, 255, 255, 0.8))",
+                    "drop-shadow(0px 0px 20px rgba(255, 234, 146, 0.5)) drop-shadow(0px 0px 10px rgba(255, 255, 255, 0.3))",
+                    "drop-shadow(0px 0px 0px rgba(255, 234, 146, 0))",
+                  ],
+                }}
+                transition={{
+                  type: "keyframes",
+                  duration: 1.3,
+                  times: [0, 0.08, 0.15, 0.6, 1],
+                  ease: "easeInOut",
+                }}
+                className="absolute w-40 h-40"
+              >
+                <svg viewBox="0 0 24 24" className="w-full h-full">
+                  <path
+                    d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"
+                    fill="#ffea92"
+                  />
+                </svg>
+              </motion.div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 }

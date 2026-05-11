@@ -4,25 +4,25 @@
   "description": "Morning Routine App",
   "icons": [
     {
-      "src": "/Icons/Morning_App_Icon_V7.png",
+      "src": "/Icons/Morning_App_Icon_v8.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/Icons/Morning_App_Icon_V7.png",
+      "src": "/Icons/Morning_App_Icon_v8.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/Icons/Morning_App_Icon_V7.png",
+      "src": "/Icons/Morning_App_Icon_v8.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "maskable"
     },
     {
-      "src": "/Icons/Morning_App_Icon_V7.png",
+      "src": "/Icons/Morning_App_Icon_v8.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"

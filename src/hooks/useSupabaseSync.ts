@@ -78,8 +78,12 @@ export function useSupabaseSync() {
       const { data: tasksData, error: tasksError } = await supabase.from('tasks').select('*');
       if (!tasksError && tasksData) {
         const newTasks: SyncedTasks = { yuvali: new Set(), maayani: new Set(), pelegi: new Set() };
-        // Sort by id descending so newest task row is processed first for dupe safety
-        tasksData.sort((a: any, b: any) => b.id - a.id);
+        // Sort by updated_at descending so newest task row is processed first for dupe safety
+        tasksData.sort((a: any, b: any) => {
+          const tA = a.updated_at ? new Date(a.updated_at).getTime() : 0;
+          const tB = b.updated_at ? new Date(b.updated_at).getTime() : 0;
+          return tB - tA;
+        });
         
         const processed = new Set<string>();
         tasksData.forEach((row: any) => {
@@ -166,7 +170,7 @@ export function useSupabaseSync() {
       .select('id')
       .eq('child_name', kidId)
       .eq('task_name', taskId)
-      .order('id', { ascending: false })
+      .order('updated_at', { ascending: false })
       .limit(1);
 
     if (data && data.length > 0) {
@@ -211,7 +215,7 @@ export function useSupabaseSync() {
         .select('id')
         .eq('child_name', kidId)
         .eq('task_name', t)
-        .order('id', { ascending: false })
+        .order('updated_at', { ascending: false })
         .limit(1);
 
       if (data && data.length > 0) {

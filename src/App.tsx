@@ -4,6 +4,7 @@
  */
 
 import React, { useState, useEffect, useCallback } from 'react';
+import { AnimatePresence } from 'motion/react';
 import SplashScreen from './components/SplashScreen';
 import HomeScreen from './components/HomeScreen';
 import GameScreen from './components/GameScreen';
@@ -44,11 +45,27 @@ function AppContent() {
     console.log("handleKidSelect called with:", kidId);
     setSelectedKid(kidId);
     setScreen('game');
+    window.history.pushState({ screen: 'game', kidId }, '');
   }, []);
 
   const handleBack = useCallback(() => {
     console.log("handleBack called");
-    setScreen('home');
+    if (window.history.state?.screen === 'game') {
+      window.history.back(); // Triggers popstate which sets to home
+    } else {
+      setScreen('home');
+    }
+  }, []);
+
+  useEffect(() => {
+    const handlePopState = () => {
+      setScreen(prev => {
+        if (prev === 'game') return 'home';
+        return prev;
+      });
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
   }, []);
 
   useEffect(() => {
@@ -63,7 +80,7 @@ function AppContent() {
   return (
     <div 
       dir="rtl" 
-      className="w-full h-full min-h-[100dvh] max-w-md mx-auto relative overflow-hidden flex flex-col font-sans select-none"
+      className="w-full max-w-full sm:max-w-md mx-auto relative overflow-x-hidden flex flex-col font-sans select-none min-h-[100dvh]"
     >
       {/* Background layer: Day */}
       <div 
@@ -84,11 +101,13 @@ function AppContent() {
       
       {/* App content layer */}
       <div className="relative z-10 w-full h-full flex flex-col pointer-events-auto">
-        {screen === 'splash' && <SplashScreen onFinish={handleSplashFinish} />}
-        {screen === 'home' && <HomeScreen onSelectKid={handleKidSelect} hasMagicBg={false} />}
-        {screen === 'game' && selectedKid && (
-          <GameScreen kidId={selectedKid} onBack={handleBack} />
-        )}
+        <AnimatePresence>
+          {screen === 'splash' && <SplashScreen key="splash" onFinish={handleSplashFinish} />}
+          {screen === 'home' && <HomeScreen key="home" onSelectKid={handleKidSelect} hasMagicBg={false} />}
+          {screen === 'game' && selectedKid && (
+            <GameScreen key="game" kidId={selectedKid} onBack={handleBack} />
+          )}
+        </AnimatePresence>
         <InstallPrompt />
       </div>
     </div>

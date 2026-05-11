@@ -1,25 +1,34 @@
-import tailwindcss from '@tailwindcss/vite';
-import react from '@vitejs/plugin-react';
-import path from 'path';
-import {defineConfig, loadEnv} from 'vite';
+import tailwindcss from "@tailwindcss/vite";
+import react from "@vitejs/plugin-react";
+import path from "path";
+import { defineConfig, loadEnv } from "vite";
 
-export default defineConfig(({mode}) => {
-  const env = loadEnv(mode, '.', '');
+export default defineConfig(({ mode }) => {
+  const env = loadEnv(mode, ".", "");
   return {
-    base: '/',
+    base: "/",
     plugins: [react(), tailwindcss()],
     resolve: {
       alias: {
-        '@': path.resolve(__dirname, '.'),
+        "@": path.resolve(__dirname, "."),
       },
     },
     optimizeDeps: {
-      exclude: ['firebase', 'firebase/app', 'firebase/auth', 'firebase/firestore']
+      exclude: [
+        "firebase",
+        "firebase/app",
+        "firebase/auth",
+        "firebase/firestore",
+      ],
     },
     server: {
-      // HMR is disabled in AI Studio via DISABLE_HMR env var.
-      // Do not modifyâfile watching is disabled to prevent flickering during agent edits.
-      hmr: process.env.DISABLE_HMR !== 'true',
+      host: "0.0.0.0",
+      port: 3000,
+      allowedHosts: true,
+      hmr: {
+        protocol: "wss",
+        clientPort: 443,
+      },
     },
   };
 });

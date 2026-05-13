@@ -115,11 +115,15 @@ function VisualTimer() {
         } else {
           animate(x, leftBound * percent, { duration: 0.2, type: "spring", stiffness: 400, damping: 40 });
         }
+      } else if (isOpen) {
+        x.set(leftBound);
+      } else if (!isRunning) {
+        x.set(0);
       }
     });
     observer.observe(constraintsRef.current);
     return () => observer.disconnect();
-  }, [isRunning, isPaused, totalTime, timerState.endTime, timeLeft]); 
+  }, [isRunning, isPaused, totalTime, timerState.endTime, timeLeft, isOpen]);
 
   // Re-run animation when pause state changes
   useEffect(() => {
@@ -140,8 +144,12 @@ function VisualTimer() {
         } else {
           animate(x, leftBound * percent, { duration: 0.2, type: "spring", stiffness: 400, damping: 40 });
         }
+      } else if (isOpen) {
+        x.set(leftBound);
+      } else if (!isRunning) {
+        x.set(0);
       }
-  }, [isPaused, isRunning, timerState.endTime, totalTime, timeLeft]);
+  }, [isOpen, isPaused, isRunning, timerState.endTime, totalTime, timeLeft]);
 
   const handleStart = () => {
     // initialize audio context on user interaction
@@ -186,14 +194,6 @@ function VisualTimer() {
     }
   };
 
-  const rotate = useTransform(x, (currentX) => {
-    if (isRunning) return -180;
-    const maxDist = Math.abs(dragBounds.left);
-    if (maxDist <= 0) return 0;
-    const ratio = Math.min(Math.max(-currentX / maxDist, 0), 1);
-    return ratio * -180;
-  });
-
   const thumbBg = useTransform(x, (currentX) => {
     if (isRunning) return '#ffb3b6';
     const maxDist = Math.abs(dragBounds.left);
@@ -224,7 +224,7 @@ function VisualTimer() {
     }
 
     // Right button (cancel) - show if switch is dragged past it
-    if (latest < -50) {
+    if ((isRunning || isPaused) && latest < -50) {
       if (!showRightBtn) setShowRightBtn(true);
     } else {
       if (showRightBtn) setShowRightBtn(false);
@@ -250,12 +250,16 @@ function VisualTimer() {
     return h > 0 ? `${h}:${m}:${s}` : `${m}:${s}`;
   };
 
+  const isExpanded = isOpen || isRunning || isPaused || (totalTime > 0 && timeLeft > 0);
+
   return (
-    <div className="w-full relative mb-2">
+    <div className="w-full relative mb-2 flex justify-center">
       {/* Container */}
-      <div 
+      <motion.div 
         ref={constraintsRef}
-        className="w-full h-[clamp(43px,6.8vh,66px)] rounded-full border-2 border-[#333] relative flex items-center bg-black/5 backdrop-blur-[2px] shrink-0 overflow-hidden"
+        animate={{ width: isExpanded ? "100%" : "clamp(43px,6.8vh,66px)" }}
+        transition={{ type: "spring", stiffness: 400, damping: 30 }}
+        className="h-[clamp(43px,6.8vh,66px)] rounded-full border-2 border-[#333] relative flex items-center bg-black/5 backdrop-blur-[2px] shrink-0"
         style={{ boxShadow: "inset 0 4px 0 #333" }}
       >
         {/* Base Timer Text (Black, shown on light track) */}
@@ -317,20 +321,26 @@ function VisualTimer() {
         {/* Thumb */}
         <motion.div
           ref={switchRef}
-          drag={!isRunning ? "x" : false}
+          drag={(!isRunning && isExpanded) ? "x" : false}
           dragConstraints={dragBounds}
           dragElastic={0.1}
           dragMomentum={false}
           onDragEnd={handleDragEnd}
+          onClick={() => {
+            if (!isExpanded) {
+              setIsOpen(true);
+              safeVibrate(50);
+            }
+          }}
           style={{ x, backgroundColor: thumbBg, boxShadow: thumbShadow }}
           className={`absolute right-[-2px] top-[-2px] h-[calc(100%+4px)] aspect-square border-2 border-[#333] rounded-full flex items-center justify-center z-20 cursor-grab active:cursor-grabbing`}
         >
-          <motion.div style={{ rotate, display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', height: '100%' }}>
+          <motion.div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', height: '100%' }}>
             <img src="/Icons_New/Timer.png" alt="Timer" className="absolute w-full h-full object-contain opacity-90 pointer-events-none scale-[0.75]" />
             <img src="/Icons_New/Timer.png" alt="Timer" className="absolute w-full h-full object-contain pointer-events-none scale-[0.75]" style={{ mixBlendMode: 'multiply' }} />
           </motion.div>
         </motion.div>
-      </div>
+      </motion.div>
 
       {/* Settings Modal */}
       <AnimatePresence>

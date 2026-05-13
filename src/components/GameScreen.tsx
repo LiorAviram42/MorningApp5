@@ -681,7 +681,7 @@ export default function GameScreen({ kidId, onBack }: Props) {
         <div className="flex-1 flex flex-col w-full my-0 min-h-0 gap-1 sm:gap-2 lg:gap-3">
           <div className="flex-1 grid grid-cols-[clamp(70px,24vw,110px)_1fr_clamp(70px,24vw,110px)] items-stretch justify-items-center w-full min-h-0 relative">
             {/* Right Tasks */}
-            <div className="flex flex-col justify-start gap-0 sm:gap-0.5 h-full w-full items-center z-10 py-0 min-h-0 relative mt-1">
+            <div className="flex flex-col justify-start gap-0 sm:gap-0.5 h-full w-full items-center z-10 py-0 min-h-0 relative mt-[clamp(19px,5vh,35px)]">
               {rightTasks.map((t, i) => (
                 <TaskButton
                   key={t.id}
@@ -755,7 +755,7 @@ export default function GameScreen({ kidId, onBack }: Props) {
             </div>
 
             {/* Left Tasks */}
-            <div className="flex flex-col justify-start gap-0 sm:gap-0.5 h-full w-full items-center z-10 py-0 min-h-0 relative mt-1">
+            <div className="flex flex-col justify-start gap-0 sm:gap-0.5 h-full w-full items-center z-10 py-0 min-h-0 relative mt-[clamp(19px,5vh,35px)]">
               {leftTasks.map((t, i) => (
                 <TaskButton
                   key={t.id}

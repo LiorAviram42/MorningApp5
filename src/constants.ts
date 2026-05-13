@@ -1,7 +1,7 @@
 import { KidConfig, KidId, Task } from './types';
 
-// Icons will be fetched from the respective theme folder
-const getIcon = (name: string, theme: 'day' | 'night') => `/${theme}/Icons/${name}`;
+// Icons will be fetched from the new global folder
+const getIcon = (name: string) => `/Icons_New/${name}`;
 
 export const getKids = (theme: 'day' | 'night'): Record<KidId, KidConfig> => ({
   yuvali: {
@@ -32,31 +32,31 @@ export const getTasksForKid = (kidId: KidId, theme: 'day' | 'night'): Task[] => 
 
   if (theme === 'night') {
     kidTasks = [
-      { id: 'teeth', title: 'צחצוח\nשיניים', iconOff: getIcon('icon_teeth_off.png', theme), iconOn: getIcon('icon_teeth_on.png', theme) },
-      { id: 'face', title: 'שטיפת פנים', iconOff: getIcon('icon_face_yuvali_off.png', theme), iconOn: getIcon('icon_face_yuvali_on.png', theme) },
-      { id: 'shower', title: 'מקלחת', iconOff: getIcon('icon_shower_off.png', theme), iconOn: getIcon('icon_shower_on.png', theme) },
-      { id: 'toilet', title: 'שירותים', iconOff: getIcon('icon_toilet_off.png', theme), iconOn: getIcon('icon_toilet_on.png', theme) },
-      { id: 'pj', title: 'פיג\'מה', iconOff: getIcon('icon_PJ_Off.png', theme), iconOn: getIcon('icon_PJ_On.png', theme) },
-      { id: 'dinner', title: 'ארוחת ערב', iconOff: getIcon('Dinner_Off.png', theme), iconOn: getIcon('Dinner_On.png', theme) },
+      { id: 'teeth', title: 'צחצוח שיניים', iconOff: getIcon('Teeth.png'), iconOn: getIcon('Teeth.png') },
+      { id: 'face', title: 'שטיפת פנים', iconOff: getIcon('Yuvali_Face.png'), iconOn: getIcon('Yuvali_Face.png') },
+      { id: 'shower', title: 'מקלחת', iconOff: getIcon('Shower.png'), iconOn: getIcon('Shower.png') },
+      { id: 'toilet', title: 'שירותים', iconOff: getIcon('Toilets.png'), iconOn: getIcon('Toilets.png') },
+      { id: 'pj', title: 'פיג\'מה', iconOff: getIcon('PJ.png'), iconOn: getIcon('PJ.png') },
+      { id: 'dinner', title: 'ארוחת ערב', iconOff: getIcon('Dinner.png'), iconOn: getIcon('Dinner.png') },
     ];
   } else {
     kidTasks = [
-      { id: 'teeth', title: 'צחצוח\nשיניים', iconOff: getIcon('icon_teeth_off.png', theme), iconOn: getIcon('icon_teeth_on.png', theme) },
-      { id: 'face', title: 'שטיפת פנים', iconOff: getIcon('icon_face_yuvali_off.png', theme), iconOn: getIcon('icon_face_yuvali_on.png', theme) },
-      { id: 'toilet', title: 'שירותים', iconOff: getIcon('icon_toilet_off.png', theme), iconOn: getIcon('icon_toilet_on.png', theme) },
-      { id: 'sunscreen', title: 'קרם הגנה', iconOff: getIcon('icon_sunscreen_off.png', theme), iconOn: getIcon('icon_sunscreen_on.png', theme) },
-      { id: 'clothes', title: 'בגדים', iconOff: getIcon('icon_clothes_off.png', theme), iconOn: getIcon('icon_clothes_on.png', theme) },
-      { id: 'shoes', title: 'נעליים', iconOff: getIcon('icon_shoes_off.png', theme), iconOn: getIcon('icon_shoes_on.png', theme) },
-      { id: 'cereal', title: 'ארוחת בוקר', iconOff: getIcon('icon_cereal_off.png', theme), iconOn: getIcon('icon_cereal_on.png', theme) },
+      { id: 'teeth', title: 'צחצוח שיניים', iconOff: getIcon('Teeth.png'), iconOn: getIcon('Teeth.png') },
+      { id: 'face', title: 'שטיפת פנים', iconOff: getIcon('Yuvali_Face.png'), iconOn: getIcon('Yuvali_Face.png') },
+      { id: 'toilet', title: 'שירותים', iconOff: getIcon('Toilets.png'), iconOn: getIcon('Toilets.png') },
+      { id: 'sunscreen', title: 'קרם הגנה', iconOff: getIcon('Sunscreen.png'), iconOn: getIcon('Sunscreen.png') },
+      { id: 'clothes', title: 'בגדים', iconOff: getIcon('Clothes.png'), iconOn: getIcon('Clothes.png') },
+      { id: 'shoes', title: 'נעליים', iconOff: getIcon('Shoes.png'), iconOn: getIcon('Shoes.png') },
+      { id: 'cereal', title: 'ארוחת בוקר', iconOff: getIcon('Breakfast.png'), iconOn: getIcon('Breakfast.png') },
     ];
   }
 
   // Specific Tasks
   if (kidId !== 'maayani') { // Yuvali, Pelegi
-    kidTasks.push({ id: 'hair', title: 'סירוק', iconOff: getIcon('icon_hair_off.png', theme), iconOn: getIcon('icon_hair_on.png', theme) });
+    kidTasks.push({ id: 'hair', title: 'סירוק', iconOff: getIcon('Hair.png'), iconOn: getIcon('Hair.png') });
   }
   if (kidId !== 'pelegi') { // Yuvali, Maayani
-    kidTasks.push({ id: 'bag', title: theme === 'night' ? 'תיק למחר' : 'תיק', iconOff: getIcon('icon_bag_off.png', theme), iconOn: getIcon('icon_bag_on.png', theme) });
+    kidTasks.push({ id: 'bag', title: theme === 'night' ? 'תיק למחר' : 'תיק', iconOff: getIcon('Bag.png'), iconOn: getIcon('Bag.png') });
   }
 
   // Assign sides: right column gets the extra item if count is odd.
@@ -70,14 +70,14 @@ export const getTasksForKid = (kidId: KidId, theme: 'day' | 'night'): Task[] => 
   const faceTask = tasks.find(t => t.id === 'face');
   if (faceTask) {
     if (kidId === 'yuvali') {
-      faceTask.iconOff = getIcon('icon_face_yuvali_off.png', theme);
-      faceTask.iconOn = getIcon('icon_face_yuvali_on.png', theme);
+      faceTask.iconOff = getIcon('Yuvali_Face.png');
+      faceTask.iconOn = getIcon('Yuvali_Face.png');
     } else if (kidId === 'maayani') {
-      faceTask.iconOff = getIcon('icon_face_maayani_off.png', theme);
-      faceTask.iconOn = getIcon('icon_face_maayani_on.png', theme);
+      faceTask.iconOff = getIcon('Maayani_Face.png');
+      faceTask.iconOn = getIcon('Maayani_Face.png');
     } else if (kidId === 'pelegi') {
-      faceTask.iconOff = getIcon('icon_face_pelegi_off.png', theme);
-      faceTask.iconOn = getIcon('icon_face_pelegi_on.png', theme);
+      faceTask.iconOff = getIcon('Pelegi_Face.png');
+      faceTask.iconOn = getIcon('Pelegi_Face.png');
     }
   }
 
@@ -86,8 +86,8 @@ export const getTasksForKid = (kidId: KidId, theme: 'day' | 'night'): Task[] => 
     const toiletTask = tasks.find(t => t.id === 'toilet');
     if (toiletTask) {
       toiletTask.title = 'טיטול';
-      toiletTask.iconOff = getIcon('icon_diaper_off.png', theme);
-      toiletTask.iconOn = getIcon('icon_diaper_on.png', theme);
+      toiletTask.iconOff = getIcon('Diaper_Off.png');
+      toiletTask.iconOn = getIcon('Diaper_On.png');
     }
   }
 

@@ -80,7 +80,7 @@ function AppContent() {
   return (
     <div 
       dir="rtl" 
-      className="w-full max-w-full sm:max-w-md mx-auto relative overflow-x-hidden flex flex-col font-sans select-none min-h-[100dvh]"
+      className="w-full max-w-full sm:max-w-md mx-auto relative overflow-x-hidden flex flex-col font-sans select-none min-h-[100dvh] h-[100dvh]"
     >
       {/* Background layer: Day */}
       <div 

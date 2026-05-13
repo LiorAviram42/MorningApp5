@@ -2,12 +2,14 @@ import React, { useState, useRef } from 'react';
 import { motion } from 'motion/react';
 import { safeVibrate, sounds } from '../utils/sounds';
 import { Check } from 'lucide-react';
+import { useTheme } from '../contexts/ThemeContext';
 
 interface Props {
   onLogin: (role: 'parent' | 'child') => void;
 }
 
 export default function PinScreen({ onLogin }: Props) {
+  const { theme } = useTheme();
   const [pin, setPin] = useState('');
   const [status, setStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const inputRef = useRef<HTMLInputElement>(null);
@@ -40,41 +42,60 @@ export default function PinScreen({ onLogin }: Props) {
   const getButtonClass = () => {
     if (status === 'success') return 'bg-[#d0f4de] border-[#333] text-[#333]';
     if (status === 'error') return 'bg-red-400 border-[#333] text-white';
+    if (theme === 'night') return 'bg-[#4a3b69] border-[#333] text-white/50';
     return 'bg-[#f8f9fa] border-[#333] text-[#333]/50';
   };
 
   const getInputClass = () => {
     if (status === 'success') return 'bg-[#d0f4de]/30 border-[#d0f4de] text-[#333]';
     if (status === 'error') return 'bg-red-100 border-red-400 text-red-600';
+    if (theme === 'night') return 'bg-[#4a3b69]/40 focus:bg-[#4a3b69]/60 text-white border-[#333] placeholder-white/30';
     return 'bg-white focus:bg-[#fdfdfd] text-[#333] border-[#333]';
   };
+
+  const bgGradient = theme === 'night'
+    ? 'linear-gradient(to bottom, #2b1b4d 0%, #4a3b69 50%, #2b1b4d 100%)'
+    : 'linear-gradient(to bottom, #C5E9F1 0%, #FDC4C1 50%, #FFFDE1 100%)';
+
+  const windowBg = theme === 'night' ? 'bg-[#3b2b5acc] border-[#222]' : 'bg-white/75 border-[#333]';
+  const textColor = theme === 'night' ? 'text-white' : 'text-[#333]';
 
   return (
     <div 
       dir="rtl"
       className="flex flex-col items-center justify-center h-[100dvh] w-full font-sans relative overflow-hidden box-border p-4"
-      style={{ background: 'linear-gradient(to bottom, #C5E9F1 0%, #FDC4C1 50%, #FFFDE1 100%)' }}
+      style={{ background: bgGradient }}
     >
       {/* Subtle background pattern */}
-      <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: 'radial-gradient(#333 1px, transparent 1px)', backgroundSize: '24px 24px' }} />
+      <div className={`absolute inset-0 pointer-events-none ${theme === 'night' ? 'opacity-[0.08]' : 'opacity-[0.03]'}`} style={{ backgroundImage: theme === 'night' ? 'radial-gradient(#fff 1px, transparent 1px)' : 'radial-gradient(#333 1px, transparent 1px)', backgroundSize: '24px 24px' }} />
       
       <motion.div 
         initial={{ y: 20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
-        className="w-[90%] max-w-[320px] bg-white/75 backdrop-blur-md rounded-3xl border-2 border-[#333] shadow-[0_8px_0_#333] p-5 md:p-6 flex flex-col items-center relative z-10 box-border mx-auto"
+        className={`w-[90%] max-w-[320px] backdrop-blur-md rounded-3xl border-2 shadow-[0_8px_0_#333] p-5 md:p-6 flex flex-col items-center relative z-10 box-border mx-auto ${windowBg}`}
       >
-        <h1 className="text-xl md:text-2xl font-bold text-[#333] mb-5 text-center">מי נכנס?</h1>
+        <h1 className={`text-xl md:text-2xl font-bold mb-5 text-center ${textColor}`}>מי נכנס?</h1>
 
-        <form onSubmit={handleSubmit} className="flex items-center gap-3 w-full justify-center box-border">
+        <form onSubmit={handleSubmit} noValidate className="flex items-center gap-3 w-full justify-center box-border">
           <input
             ref={inputRef}
-            type="password"
+            type="text"
+            dir="rtl"
             inputMode="numeric"
-            pattern="[0-9]*"
             maxLength={4}
-            value={pin}
+            value={pin.replace(/./g, '●')}
             onChange={(e) => {
-              setPin(e.target.value);
+              // we must handle real pin value carefully because e.target.value is dots
+              const val = e.target.value;
+              const newChars = val.replace(/●/g, '').replace(/[^0-9]/g, '');
+              let nextPin = pin;
+              if (val.length < pin.length) {
+                // simple deletion
+                nextPin = pin.slice(0, val.length);
+              } else {
+                nextPin = pin + newChars;
+              }
+              setPin(nextPin.slice(0, 4));
               setStatus('idle');
             }}
             className={`min-w-0 flex-1 px-2 h-14 text-center text-2xl font-bold tracking-[0.3em] rounded-2xl border-2 outline-none shadow-[inset_0_2px_4px_rgba(0,0,0,0.05)] transition-colors appearance-none ${getInputClass()}`}

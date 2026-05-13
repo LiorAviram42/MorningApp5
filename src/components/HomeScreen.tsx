@@ -43,7 +43,7 @@ export default function HomeScreen({ onSelectKid }: Props) {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="flex flex-col items-center h-full w-full absolute inset-0 overflow-hidden box-border pb-12"
+      className="flex flex-col items-center h-full w-full absolute inset-0 overflow-y-auto overflow-x-hidden box-border pb-12"
     >
       {/* Subtle background pattern */}
       <div

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { KidId, Task } from "../types";
 import { getKids, getTasksForKid } from "../constants";
 import { motion, useAnimation, AnimatePresence, useMotionValue, useTransform, animate, useMotionValueEvent } from "motion/react";
@@ -116,9 +117,11 @@ function VisualTimer() {
           animate(x, leftBound * percent, { duration: 0.2, type: "spring", stiffness: 400, damping: 40 });
         }
       } else if (isOpen) {
-        x.set(leftBound);
+        if (Math.abs(cw - (constraintsRef.current?.parentElement?.offsetWidth || cw)) < 5) {
+          x.set(leftBound);
+        }
       } else if (!isRunning) {
-        x.set(0);
+        // Do nothing during shrink to avoid conflict with synchronized spring animation
       }
     });
     observer.observe(constraintsRef.current);
@@ -145,9 +148,11 @@ function VisualTimer() {
           animate(x, leftBound * percent, { duration: 0.2, type: "spring", stiffness: 400, damping: 40 });
         }
       } else if (isOpen) {
-        x.set(leftBound);
+        const parentW = constraintsRef.current?.parentElement?.offsetWidth || cw;
+        const targetLeftBound = -(parentW - sw);
+        animate(x, targetLeftBound, { type: "spring", stiffness: 400, damping: 30 });
       } else if (!isRunning) {
-        x.set(0);
+        animate(x, 0, { type: "spring", stiffness: 400, damping: 30 });
       }
   }, [isOpen, isPaused, isRunning, timerState.endTime, totalTime, timeLeft]);
 
@@ -259,7 +264,7 @@ function VisualTimer() {
         ref={constraintsRef}
         animate={{ width: isExpanded ? "100%" : "clamp(43px,6.8vh,66px)" }}
         transition={{ type: "spring", stiffness: 400, damping: 30 }}
-        className="h-[clamp(43px,6.8vh,66px)] rounded-full border-2 border-[#333] relative flex items-center bg-black/5 backdrop-blur-[2px] shrink-0"
+        className={`h-[clamp(43px,6.8vh,66px)] rounded-full border-2 border-[#333] relative flex items-center bg-black/5 backdrop-blur-[2px] shrink-0 ${isExpanded ? 'overflow-hidden' : ''}`}
         style={{ boxShadow: "inset 0 4px 0 #333" }}
       >
         {/* Base Timer Text (Black, shown on light track) */}
@@ -273,6 +278,8 @@ function VisualTimer() {
         <motion.div 
           className="absolute right-0 top-0 h-full rounded-full overflow-hidden"
           style={{ width: useTransform(x, curr => Math.max(-curr + ((switchRef.current?.offsetWidth || 0) * 0.5 || 28) + 16, 0) + "px") }}
+          animate={{ opacity: (isOpen || (!isRunning && !isPaused)) ? 0 : 1 }}
+          transition={{ duration: 0.3 }}
         >
           <div 
             className="absolute left-auto right-0 top-0 h-full bg-gradient-to-l from-[#FA6B6B] to-[#FFDAB9]" 
@@ -343,57 +350,60 @@ function VisualTimer() {
       </motion.div>
 
       {/* Settings Modal */}
-      <AnimatePresence>
-        {isOpen && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
-          >
+      {createPortal(
+        <AnimatePresence>
+          {isOpen && (
             <motion.div
-              initial={{ scale: 0.9, y: 20 }}
-              animate={{ scale: 1, y: 0 }}
-              exit={{ scale: 0.9, y: 20 }}
-              className="bg-[#fcf9f2] border-2 border-[#333] rounded-3xl p-6 shadow-[0_8px_0_#333] max-w-sm w-full"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 p-4"
             >
-              <h2 className="text-xl font-bold text-center mb-6 text-[#333]">הגדרת טיימר</h2>
-              
-              <div className="flex justify-center gap-2 sm:gap-4 text-center" dir="ltr">
-                <div className="flex flex-col items-center">
-                  <DigitWheel value={inputH} onChange={setInputH} max={100} />
-                  <span className="text-[10px] sm:text-sm font-bold text-[#333]/60 mt-1">שעות</span>
+              <motion.div
+                initial={{ scale: 0.9, y: 20 }}
+                animate={{ scale: 1, y: 0 }}
+                exit={{ scale: 0.9, y: 20 }}
+                className="bg-[#fcf9f2] border-2 border-[#333] rounded-3xl p-6 shadow-[0_8px_0_#333] max-w-sm w-full"
+              >
+                <h2 className="text-xl font-bold text-center mb-6 text-[#333]">הגדרת טיימר</h2>
+                
+                <div className="flex justify-center gap-2 sm:gap-4 text-center" dir="ltr">
+                  <div className="flex flex-col items-center">
+                    <DigitWheel value={inputH} onChange={setInputH} max={100} />
+                    <span className="text-[10px] sm:text-sm font-bold text-[#333]/60 mt-1">שעות</span>
+                  </div>
+                  <div className="text-3xl font-bold text-[#333] mt-2 sm:mt-3">:</div>
+                  <div className="flex flex-col items-center">
+                    <DigitWheel value={inputM} onChange={setInputM} max={60} />
+                    <span className="text-[10px] sm:text-sm font-bold text-[#333]/60 mt-1">דקות</span>
+                  </div>
+                  <div className="text-3xl font-bold text-[#333] mt-2 sm:mt-3">:</div>
+                  <div className="flex flex-col items-center">
+                    <DigitWheel value={inputS} onChange={setInputS} max={60} />
+                    <span className="text-[10px] sm:text-sm font-bold text-[#333]/60 mt-1">שניות</span>
+                  </div>
                 </div>
-                <div className="text-3xl font-bold text-[#333] mt-2 sm:mt-3">:</div>
-                <div className="flex flex-col items-center">
-                  <DigitWheel value={inputM} onChange={setInputM} max={60} />
-                  <span className="text-[10px] sm:text-sm font-bold text-[#333]/60 mt-1">דקות</span>
-                </div>
-                <div className="text-3xl font-bold text-[#333] mt-2 sm:mt-3">:</div>
-                <div className="flex flex-col items-center">
-                  <DigitWheel value={inputS} onChange={setInputS} max={60} />
-                  <span className="text-[10px] sm:text-sm font-bold text-[#333]/60 mt-1">שניות</span>
-                </div>
-              </div>
 
-              <div className="flex gap-4 mt-8">
-                <button
-                  onClick={closeSettings}
-                  className="flex-1 py-3 rounded-xl border-2 border-[#333] bg-white text-[#333] font-bold shadow-[0_4px_0_#333] active:translate-y-1 active:shadow-none"
-                >
-                  ביטול
-                </button>
-                <button
-                  onClick={handleStart}
-                  className="flex-1 py-3 rounded-xl border-2 border-[#333] bg-[#bae1ff] text-[#333] font-bold shadow-[0_4px_0_#333] active:translate-y-1 active:shadow-none"
-                >
-                  התחל
-                </button>
-              </div>
+                <div className="flex gap-4 mt-8">
+                  <button
+                    onClick={closeSettings}
+                    className="flex-1 py-3 rounded-xl border-2 border-[#333] bg-white text-[#333] font-bold shadow-[0_4px_0_#333] active:translate-y-1 active:shadow-none"
+                  >
+                    ביטול
+                  </button>
+                  <button
+                    onClick={handleStart}
+                    className="flex-1 py-3 rounded-xl border-2 border-[#333] bg-[#bae1ff] text-[#333] font-bold shadow-[0_4px_0_#333] active:translate-y-1 active:shadow-none"
+                  >
+                    התחל
+                  </button>
+                </div>
+              </motion.div>
             </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+          )}
+        </AnimatePresence>,
+        document.body
+      )}
     </div>
   );
 }

@@ -307,9 +307,9 @@ function VisualTimer() {
       {/* Container */}
       <motion.div 
         ref={constraintsRef}
-        animate={{ width: isExpanded ? "100%" : "clamp(43px,6.8vh,66px)" }}
+        animate={{ width: isExpanded ? "100%" : "clamp(34px,6.8vh,66px)" }}
         transition={{ type: "spring", stiffness: 400, damping: 30 }}
-        className={`h-[clamp(43px,6.8vh,66px)] rounded-full border-2 border-[#333] relative flex items-center bg-black/5 backdrop-blur-[2px] shrink-0 ${isExpanded ? 'overflow-hidden' : ''}`}
+        className={`h-[clamp(34px,6.8vh,66px)] rounded-full border-2 border-[#333] relative flex items-center bg-black/5 backdrop-blur-[2px] shrink-0 ${isExpanded ? 'overflow-hidden' : ''}`}
         style={{ boxShadow: "inset 0 4px 0 #333" }}
       >
         {/* Base Timer Text (Black, shown on light track) */}
@@ -855,7 +855,7 @@ export default function GameScreen({ kidId, onBack }: Props) {
             <VisualTimer />
 
             {/* Progress Bar */}
-            <div className="w-full h-[clamp(43px,6.8vh,66px)] bg-black/5 backdrop-blur-[2px] rounded-full shrink-0 relative box-border border-2 border-[#333] p-[6px] flex items-center">
+            <div className="w-full h-[clamp(34px,6.8vh,66px)] bg-black/5 backdrop-blur-[2px] rounded-full shrink-0 relative box-border border-2 border-[#333] p-[clamp(3px,0.8vh,6px)] flex items-center">
               <div className="w-full h-full rounded-full overflow-hidden bg-white/40 relative">
                 {progressPct === 0 && (
                   <div 
@@ -1179,7 +1179,7 @@ function TaskButton({ task, isCompleted, isReady, onClick, colorIndex, totalItem
   };
 
   return (
-    <div className="flex flex-col items-center justify-start w-full gap-0.5 shrink min-h-0">
+    <div className="flex flex-col items-center justify-start w-full gap-0.5">
       <motion.button
         initial={{
           y: isReady ? 0 : 4,
@@ -1192,7 +1192,7 @@ function TaskButton({ task, isCompleted, isReady, onClick, colorIndex, totalItem
         onPointerUp={handlePointerUp}
         onPointerCancel={handlePointerCancel}
         onPointerLeave={handlePointerCancel}
-        className={`w-[clamp(48px,min(16vw,12vh),88px)] h-[clamp(38px,min(12.7vw,9.6vh),70px)] border border-[#333] flex items-center justify-center p-1 touch-none shrink min-h-[30px] overflow-hidden relative rounded-[999px]`}
+        className={`w-[clamp(38px,min(16vw,12vh),88px)] h-[clamp(30px,min(12.7vw,9.6vh),70px)] border border-[#333] flex items-center justify-center p-1 touch-none overflow-hidden relative rounded-[999px]`}
       >
         <img
           src={isCompleted ? task.iconOn : task.iconOff}
@@ -1210,7 +1210,7 @@ function TaskButton({ task, isCompleted, isReady, onClick, colorIndex, totalItem
           style={{ mixBlendMode: 'multiply', opacity: isCompleted ? 0.4 : 0.65 }}
         />
       </motion.button>
-      <div className="h-[28px] sm:h-[32px] flex items-center justify-center w-full shrink-0">
+      <div className="h-[clamp(20px,4vh,32px)] flex items-center justify-center w-full shrink-0">
         <span className="block text-[clamp(9px,min(2.5vw,1.8vh),13.5px)] font-bold text-[#333] text-center leading-[1.1] whitespace-pre-line px-1 break-words line-clamp-2">
           {task.title}
         </span>

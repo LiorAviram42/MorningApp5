@@ -303,13 +303,13 @@ function VisualTimer() {
   const isFlashingRed = flashEndParams.isFlashing || (isRunning && timeLeft > 0 && timeLeft <= 10);
 
   return (
-    <div className="w-full relative mb-2 flex justify-center shrink min-h-[24px]">
+    <div className="w-full relative mb-2 flex justify-center">
       {/* Container */}
       <motion.div 
         ref={constraintsRef}
         animate={{ width: isExpanded ? "100%" : "clamp(34px,6.8vh,66px)" }}
         transition={{ type: "spring", stiffness: 400, damping: 30 }}
-        className={`h-[clamp(34px,6.8vh,66px)] shrink min-h-[24px] rounded-full border-2 border-[#333] relative flex items-center bg-black/5 backdrop-blur-[2px] ${isExpanded ? 'overflow-hidden' : ''}`}
+        className={`h-[clamp(34px,6.8vh,66px)] rounded-full border-2 border-[#333] relative flex items-center bg-black/5 backdrop-blur-[2px] shrink-0 ${isExpanded ? 'overflow-hidden' : ''}`}
         style={{ boxShadow: "inset 0 4px 0 #333" }}
       >
         {/* Base Timer Text (Black, shown on light track) */}
@@ -762,7 +762,7 @@ export default function GameScreen({ kidId, onBack }: Props) {
         <div className="flex-1 flex flex-col w-full my-0 min-h-0 gap-1 sm:gap-2 lg:gap-3">
           <div className="flex-1 grid grid-cols-[clamp(70px,24vw,110px)_1fr_clamp(70px,24vw,110px)] items-stretch justify-items-center w-full min-h-0 relative">
             {/* Right Tasks */}
-            <div className="flex flex-col justify-start gap-0 sm:gap-0.5 w-full h-full items-center z-10 pb-0 pt-[clamp(19px,5vh,35px)] min-h-0 relative">
+            <div className="flex flex-col justify-start gap-0 sm:gap-0.5 h-full w-full items-center z-10 py-0 min-h-0 relative mt-[clamp(19px,5vh,35px)]">
               {rightTasks.map((t, i) => (
                 <TaskButton
                   key={t.id}
@@ -836,7 +836,7 @@ export default function GameScreen({ kidId, onBack }: Props) {
             </div>
 
             {/* Left Tasks */}
-            <div className="flex flex-col justify-start gap-0 sm:gap-0.5 w-full h-full items-center z-10 pb-0 pt-[clamp(19px,5vh,35px)] min-h-0 relative">
+            <div className="flex flex-col justify-start gap-0 sm:gap-0.5 h-full w-full items-center z-10 py-0 min-h-0 relative mt-[clamp(19px,5vh,35px)]">
               {leftTasks.map((t, i) => (
                 <TaskButton
                   key={t.id}
@@ -851,11 +851,11 @@ export default function GameScreen({ kidId, onBack }: Props) {
             </div>
           </div>
           
-          <div className="flex flex-col w-full gap-2 sm:gap-3 mt-auto pt-1 sm:pt-2 shrink-[2] min-h-[40px]">
+          <div className="flex flex-col w-full gap-2 sm:gap-3 mt-auto pt-1 sm:pt-2">
             <VisualTimer />
 
             {/* Progress Bar */}
-            <div className="w-full h-[clamp(34px,6.8vh,66px)] bg-black/5 backdrop-blur-[2px] rounded-full shrink min-h-[20px] relative box-border border-2 border-[#333] p-[clamp(3px,0.8vh,6px)] flex items-center">
+            <div className="w-full h-[clamp(34px,6.8vh,66px)] bg-black/5 backdrop-blur-[2px] rounded-full shrink-0 relative box-border border-2 border-[#333] p-[clamp(3px,0.8vh,6px)] flex items-center">
               <div className="w-full h-full rounded-full overflow-hidden bg-white/40 relative">
                 {progressPct === 0 && (
                   <div 
@@ -1104,7 +1104,7 @@ function TaskButton({ task, isCompleted, isReady, onClick, colorIndex, totalItem
   const activeShadow = `inset 0 0 0 3px ${currentBorder}, 0px 4px 0px #333`;
   const pressedShadow = `inset 0 0 0 3px ${currentBorder}, 0px 0px 0px #333`;
 
-  const buttonWidth = "clamp(48px,min(16vw,12vh),88px)";
+  const buttonWidth = "clamp(32px,min(16vw,12vh),88px)";
 
   useEffect(() => {
     if (isReady) {
@@ -1113,7 +1113,8 @@ function TaskButton({ task, isCompleted, isReady, onClick, colorIndex, totalItem
           y: 0, 
           boxShadow: activeShadow, 
           backgroundColor: currentBg, 
-          borderRadius: "9999px"
+          borderRadius: "9999px",
+          width: buttonWidth
         });
       }
     } else {
@@ -1121,10 +1122,11 @@ function TaskButton({ task, isCompleted, isReady, onClick, colorIndex, totalItem
         y: 4, 
         boxShadow: pressedShadow, 
         backgroundColor: currentBg, 
-        borderRadius: "9999px"
+        borderRadius: "9999px",
+        width: buttonWidth
       });
     }
-  }, [isReady, isCompleted, activeShadow, pressedShadow, currentBg, isPressed, controls]);
+  }, [isReady, isCompleted, activeShadow, pressedShadow, currentBg, isPressed, controls, buttonWidth]);
 
   const handlePointerDown = () => {
     setIsPressed(true);
@@ -1138,6 +1140,7 @@ function TaskButton({ task, isCompleted, isReady, onClick, colorIndex, totalItem
       boxShadow: anticipatedPressedShadow,
       backgroundColor: anticipatedBg,
       borderRadius: "9999px",
+      width: buttonWidth,
       transition: { type: "spring" as const, stiffness: 1000, damping: 20 },
     });
   };
@@ -1156,6 +1159,7 @@ function TaskButton({ task, isCompleted, isReady, onClick, colorIndex, totalItem
       boxShadow: anticipatedActiveShadow,
       backgroundColor: anticipatedBg,
       borderRadius: "9999px",
+      width: buttonWidth,
       transition: {
         type: "spring" as const,
         stiffness: 400, 
@@ -1174,25 +1178,27 @@ function TaskButton({ task, isCompleted, isReady, onClick, colorIndex, totalItem
       boxShadow: activeShadow,
       backgroundColor: currentBg,
       borderRadius: "9999px",
+      width: buttonWidth,
       transition: { type: "spring" as const, stiffness: 400, damping: 20 }
     });
   };
 
   return (
-    <div className="flex flex-col items-center justify-start w-full gap-0.5 shrink min-h-0 basis-0 flex-1">
+    <div className="flex flex-col items-center justify-start w-full gap-0.5">
       <motion.button
         initial={{
           y: isReady ? 0 : 4,
           boxShadow: isReady ? activeShadow : pressedShadow,
           backgroundColor: currentBg,
-          borderRadius: "9999px"
+          borderRadius: "9999px",
+          width: buttonWidth
         }}
         animate={controls}
         onPointerDown={handlePointerDown}
         onPointerUp={handlePointerUp}
         onPointerCancel={handlePointerCancel}
         onPointerLeave={handlePointerCancel}
-        className={`w-auto aspect-[1.25] h-full max-h-[70px] max-w-[88px] border border-[#333] flex items-center justify-center p-1 touch-none overflow-hidden relative rounded-[999px] shrink min-h-[20px]`}
+        className={`h-[clamp(24px,min(12.7vw,9.6vh),70px)] border border-[#333] flex items-center justify-center p-1 touch-none shrink-0 overflow-hidden relative rounded-full`}
       >
         <img
           src={isCompleted ? task.iconOn : task.iconOff}
@@ -1210,7 +1216,7 @@ function TaskButton({ task, isCompleted, isReady, onClick, colorIndex, totalItem
           style={{ mixBlendMode: 'multiply', opacity: isCompleted ? 0.4 : 0.65 }}
         />
       </motion.button>
-      <div className="flex-1 max-h-[32px] min-h-0 flex items-center justify-center w-full shrink-0">
+      <div className="h-[clamp(20px,3.2vh,32px)] flex items-center justify-center w-full shrink-0">
         <span className="block text-[clamp(9px,min(2.5vw,1.8vh),13.5px)] font-bold text-[#333] text-center leading-[1.1] whitespace-pre-line px-1 break-words line-clamp-2">
           {task.title}
         </span>

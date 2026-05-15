@@ -12,6 +12,7 @@ import DigitWheel from "./DigitWheel";
 function VisualTimer() {
   const { theme } = useTheme();
   const [isOpen, setIsOpen] = useState(false);
+  const [flashEndParams, setFlashEndParams] = useState({ isFlashing: false });
   const { timerState, setTimerState, cancelTimer: globalCancelTimer, togglePause } = useUser();
   const { isRunning, isPaused, timeLeft, totalTime, inputH, inputM, inputS } = timerState;
 
@@ -20,6 +21,41 @@ function VisualTimer() {
   const setInputS = (val: string) => setTimerState(prev => ({ ...prev, inputS: val }));
 
   const audioCtxRef = useRef<AudioContext | null>(null);
+  
+  const wakeLockRef = useRef<WakeLockSentinel | null>(null);
+
+  useEffect(() => {
+    let internalWakeLock: WakeLockSentinel | null = null;
+    const requestWakeLock = async () => {
+      try {
+        if ('wakeLock' in navigator) {
+          internalWakeLock = await navigator.wakeLock.request('screen');
+          wakeLockRef.current = internalWakeLock;
+        }
+      } catch (err) {
+        console.warn('Wake Lock request failed:', err);
+      }
+    };
+
+    const releaseWakeLock = async () => {
+      if (internalWakeLock) {
+        await internalWakeLock.release().catch(() => {});
+        internalWakeLock = null;
+        wakeLockRef.current = null;
+      }
+    };
+
+    if (isRunning) {
+      requestWakeLock();
+    } else {
+      releaseWakeLock();
+    }
+
+    return () => {
+      releaseWakeLock();
+    };
+  }, [isRunning]);
+
   const getAudioCtx = useCallback(() => {
     if (!audioCtxRef.current) {
       audioCtxRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
@@ -54,24 +90,35 @@ function VisualTimer() {
   const playFinishSound = useCallback(() => {
     try {
       const audioCtx = getAudioCtx();
-      const freqs = [440, 440, 440]; // Neutral alerting blips
-      freqs.forEach((freq, i) => {
+      const playAlarmTone = (freq: number, startTime: number, duration: number, vol: number) => {
         const osc = audioCtx.createOscillator();
         const gain = audioCtx.createGain();
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+        osc.type = 'square'; // distinct alarm tone
+        osc.frequency.setValueAtTime(freq, startTime);
         
-        const startTime = audioCtx.currentTime + i * 0.25;
         gain.gain.setValueAtTime(0, startTime);
-        gain.gain.linearRampToValueAtTime(0.3, startTime + 0.05);
-        gain.gain.exponentialRampToValueAtTime(0.01, startTime + 0.3);
+        gain.gain.linearRampToValueAtTime(vol, startTime + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.01, startTime + duration);
         
-        osc.connect(gain);
+        const filter = audioCtx.createBiquadFilter();
+        filter.type = 'lowpass';
+        filter.frequency.value = 2500;
+        
+        osc.connect(filter);
+        filter.connect(gain);
         gain.connect(audioCtx.destination);
         
         osc.start(startTime);
-        osc.stop(startTime + 0.4);
-      });
+        osc.stop(startTime + duration + 0.1);
+      };
+      
+      const now = audioCtx.currentTime;
+      // Play 3 groups of quick double-beeps
+      for (let j = 0; j < 3; j++) {
+         const timeOff = now + j * 0.8;
+         playAlarmTone(600, timeOff, 0.12, 0.3);
+         playAlarmTone(600, timeOff + 0.2, 0.12, 0.3);
+      }
     } catch(e) {}
   }, [getAudioCtx]);
 
@@ -85,6 +132,8 @@ function VisualTimer() {
       }
     } else if (isRunning === false && timeLeft === 0 && totalTime > 0) {
       playFinishSound();
+      setFlashEndParams({ isFlashing: true });
+      setTimeout(() => setFlashEndParams({ isFlashing: false }), 2400);
       // Ensure we clear totalTime so we don't beep again instantly if it re-renders
       setTimerState(prev => ({ ...prev, totalTime: 0 }));
     }
@@ -168,6 +217,8 @@ function VisualTimer() {
     if (isNaN(s)) s = 0;
     const total = h * 3600 + m * 60 + s;
     if (total > 0) {
+      sounds.playStartTimer();
+      safeVibrate(50);
       const now = Date.now();
       setTimerState(prev => ({
         ...prev,
@@ -217,17 +268,9 @@ function VisualTimer() {
     return '0 4px 0 #333, inset 0 0 0 3px #e3dbd1';
   });
 
-  const [showLeftBtn, setShowLeftBtn] = useState(false);
   const [showRightBtn, setShowRightBtn] = useState(false);
 
   useMotionValueEvent(x, "change", (latest) => {
-    // Left button (play/pause) - show if running/paused and switch is past it
-    if ((isRunning || isPaused) && latest > dragBounds.left + 50) {
-      if (!showLeftBtn) setShowLeftBtn(true);
-    } else {
-      if (showLeftBtn) setShowLeftBtn(false);
-    }
-
     // Right button (cancel) - show if switch is dragged past it
     if ((isRunning || isPaused) && latest < -50) {
       if (!showRightBtn) setShowRightBtn(true);
@@ -240,6 +283,7 @@ function VisualTimer() {
     if (!isRunning) {
       if (x.get() < dragBounds.left * 0.8) {
         setIsOpen(true);
+        sounds.playClick();
         safeVibrate(50);
         animate(x, dragBounds.left, { type: "tween", duration: 0.2 });
       } else {
@@ -256,6 +300,7 @@ function VisualTimer() {
   };
 
   const isExpanded = isOpen || isRunning || isPaused || (totalTime > 0 && timeLeft > 0);
+  const isFlashingRed = flashEndParams.isFlashing || (isRunning && timeLeft > 0 && timeLeft <= 10);
 
   return (
     <div className="w-full relative mb-2 flex justify-center">
@@ -297,19 +342,6 @@ function VisualTimer() {
         <div className="absolute inset-0 shadow-[inset_0_4px_0_#333] pointer-events-none rounded-full" />
 
         <AnimatePresence>
-          {showLeftBtn && (
-              <motion.button 
-                key="left-btn"
-                initial={{ scale: 0, opacity: 0, rotate: -45 }}
-                animate={{ scale: 1, opacity: 1, rotate: 0 }}
-                exit={{ scale: 0, opacity: 0 }}
-                transition={{ type: "spring", stiffness: 400, damping: 15 }}
-                onClick={togglePause}
-                className="absolute left-[16px] z-10 w-[clamp(19px,3.2vh,26px)] h-[clamp(19px,3.2vh,26px)] bg-white/90 text-[#333] border-2 border-[#333] rounded-full flex items-center justify-center shadow-[0_2px_0_#333] active:translate-y-[2px] active:shadow-none"
-              >
-                {isPaused ? <Play size={14} fill="currentColor" className="ml-0.5" /> : <Pause size={14} fill="currentColor" />}
-              </motion.button>
-          )}
           {showRightBtn && (
               <motion.button 
                 key="right-btn"
@@ -334,17 +366,41 @@ function VisualTimer() {
           dragMomentum={false}
           onDragEnd={handleDragEnd}
           onClick={() => {
-            if (!isExpanded) {
+            if (isRunning || isPaused) {
+              togglePause();
+              sounds.playClick();
+              safeVibrate(50);
+            } else if (!isExpanded) {
               setIsOpen(true);
+              sounds.playClick();
               safeVibrate(50);
             }
           }}
           style={{ x, backgroundColor: thumbBg, boxShadow: thumbShadow }}
-          className={`absolute right-[-2px] top-[-2px] h-[calc(100%+4px)] aspect-square border-2 border-[#333] rounded-full flex items-center justify-center z-20 cursor-grab active:cursor-grabbing`}
+          className={`absolute right-[-2px] top-[-2px] h-[calc(100%+4px)] aspect-square border-2 border-[#333] rounded-full flex items-center justify-center z-20 cursor-grab active:cursor-grabbing overflow-hidden`}
         >
-          <motion.div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', height: '100%' }}>
-            <img src="/Icons_New/Timer.png" alt="Timer" className="absolute w-full h-full object-contain opacity-90 pointer-events-none scale-[0.75]" />
-            <img src="/Icons_New/Timer.png" alt="Timer" className="absolute w-full h-full object-contain pointer-events-none scale-[0.75]" style={{ mixBlendMode: 'multiply' }} />
+          {isFlashingRed && (
+            <motion.div
+              key={flashEndParams.isFlashing ? "end-flash-thumb" : timeLeft}
+              className="absolute inset-0 z-0 pointer-events-none rounded-full"
+              style={{ backgroundColor: '#ffb3b6' }}
+              animate={{ backgroundColor: ['#FA6B6B', '#ffffff'] }}
+              transition={{
+                duration: flashEndParams.isFlashing ? 0.8 : 1,
+                repeat: flashEndParams.isFlashing ? 2 : 0,
+                ease: "easeOut"
+              }}
+            />
+          )}
+          <motion.div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', height: '100%', position: 'relative', zIndex: 1 }}>
+            {(isRunning || isPaused) ? (
+              isPaused ? <Play size={24} fill="currentColor" className="ml-1 text-[#333]" /> : <Pause size={24} fill="currentColor" className="text-[#333]" />
+            ) : (
+              <>
+                <img src="/Icons_New/Timer.png" alt="Timer" className="absolute w-full h-full object-contain opacity-90 pointer-events-none scale-[0.75]" />
+                <img src="/Icons_New/Timer.png" alt="Timer" className="absolute w-full h-full object-contain pointer-events-none scale-[0.75]" style={{ mixBlendMode: 'multiply' }} />
+              </>
+            )}
           </motion.div>
         </motion.div>
       </motion.div>
@@ -487,6 +543,8 @@ export default function GameScreen({ kidId, onBack }: Props) {
     toggleTask: toggleGlobalTask,
     updateStar,
     resetKidTasks,
+    timerState,
+    cancelTimer,
   } = useUser();
   const { theme } = useTheme();
 
@@ -498,7 +556,7 @@ export default function GameScreen({ kidId, onBack }: Props) {
 
   const completedTasks = globalTasks[kidId] || new Set();
   const starsCount = globalStars[kidId] || 0;
-
+  
   const [isReady, setIsReady] = useState(false);
   const [showStarAnimation, setShowStarAnimation] = useState(false);
 
@@ -525,6 +583,9 @@ export default function GameScreen({ kidId, onBack }: Props) {
 
     if (isCompletingLastTask) {
       sounds.playSuccess();
+      if (timerState.isRunning) {
+        cancelTimer();
+      }
     }
 
     await toggleGlobalTask(kidId, taskId, willBeCompleted);

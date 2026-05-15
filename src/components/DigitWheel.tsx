@@ -1,4 +1,5 @@
 import React, { useRef, useEffect, useState } from "react";
+import { sounds, safeVibrate } from "../utils/sounds";
 
 interface Props {
   value: string;
@@ -10,6 +11,7 @@ export default function DigitWheel({ value, onChange, max }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [isScrolling, setIsScrolling] = useState(false);
   const scrollTimeout = useRef<any>(null);
+  const lastTickRef = useRef<number | null>(null);
 
   const isCircular = max === 60;
   const sets = isCircular ? 3 : 1;
@@ -23,6 +25,7 @@ export default function DigitWheel({ value, onChange, max }: Props) {
       const container = containerRef.current;
       const targetElement = container.children[targetIndex] as HTMLElement;
       if (targetElement) {
+        lastTickRef.current = targetIndex;
         const targetTop = targetElement.offsetTop;
         const currentTop = container.scrollTop;
         if (Math.abs(currentTop - targetTop) > targetElement.clientHeight) {
@@ -38,26 +41,32 @@ export default function DigitWheel({ value, onChange, max }: Props) {
     if (!containerRef.current) return;
     setIsScrolling(true);
     
+    // Play tick sound during scroll
+    const container = containerRef.current;
+    let closest = null;
+    let minDiff = Infinity;
+    const containerCenter = container.scrollTop + container.clientHeight / 2;
+    
+    for (let i = 0; i < container.children.length; i++) {
+      const child = container.children[i] as HTMLElement;
+      const childCenter = child.offsetTop + child.clientHeight / 2;
+      const diff = Math.abs(containerCenter - childCenter);
+      if (diff < minDiff) {
+        minDiff = diff;
+        closest = i;
+      }
+    }
+    
+    if (closest !== null && closest !== lastTickRef.current) {
+       lastTickRef.current = closest;
+       sounds.playClick();
+       safeVibrate(10);
+    }
+    
     if (scrollTimeout.current) clearTimeout(scrollTimeout.current);
     
     scrollTimeout.current = setTimeout(() => {
       setIsScrolling(false);
-      const container = containerRef.current;
-      if (!container) return;
-      
-      let closest = null;
-      let minDiff = Infinity;
-      const containerCenter = container.scrollTop + container.clientHeight / 2;
-      
-      for (let i = 0; i < container.children.length; i++) {
-        const child = container.children[i] as HTMLElement;
-        const childCenter = child.offsetTop + child.clientHeight / 2;
-        const diff = Math.abs(containerCenter - childCenter);
-        if (diff < minDiff) {
-          minDiff = diff;
-          closest = i;
-        }
-      }
       
       if (closest !== null) {
         const adjustedVal = closest % max;

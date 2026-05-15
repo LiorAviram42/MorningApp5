@@ -29,7 +29,7 @@ class SoundManager {
       const osc = this.audioCtx.createOscillator();
       const gain = this.audioCtx.createGain();
 
-      osc.type = 'sine';
+      osc.type = type;
       osc.frequency.setValueAtTime(freq, this.audioCtx.currentTime);
 
       // Smooth envelope to prevent "ticking" or "pops"
@@ -49,6 +49,17 @@ class SoundManager {
 
   playClick() {
     this.playTone(800, 'sine', 0.1, 0.4);
+  }
+
+  playTick() {
+    this.playTone(40, 'sawtooth', 0.02, 0.3);
+  }
+
+  playStartTimer() {
+    this.init();
+    [440, 660].forEach((freq, i) => {
+      setTimeout(() => this.playTone(freq, 'sine', 0.15, 0.3), i * 150);
+    });
   }
 
   playSuccess() {

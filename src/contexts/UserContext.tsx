@@ -3,6 +3,20 @@ import PinScreen from '../components/PinScreen';
 import { useSupabaseSync, SyncedTasks, SyncedStars } from '../hooks/useSupabaseSync';
 import { KidId } from '../types';
 
+export interface CustomTaskDef {
+  id: string;
+  title: string;
+  iconName: string;
+  theme: 'day' | 'night';
+}
+
+export type KidSettings = {
+  hiddenTasks: string[];
+  customTasks: CustomTaskDef[];
+};
+
+export type SettingsMap = Record<KidId, KidSettings>;
+
 interface AppContextType {
   role: 'parent' | 'child' | null;
   setRole: (role: 'parent' | 'child' | null) => void;
@@ -16,6 +30,10 @@ interface AppContextType {
   setTimerState: React.Dispatch<React.SetStateAction<{ isRunning: boolean; isPaused: boolean; timeLeft: number; totalTime: number; endTime: number | null; inputH: string; inputM: string; inputS: string; }>>;
   cancelTimer: () => void;
   togglePause: () => void;
+  settings: SettingsMap;
+  updateSettings: (kidId: KidId, newSettings: KidSettings) => void;
+  isMenuOpen: boolean;
+  setIsMenuOpen: (isOpen: boolean) => void;
 }
 
 const AppContext = createContext<AppContextType | null>(null);
@@ -26,9 +44,39 @@ export const useUser = () => {
   return context;
 };
 
+const defaultSettings: SettingsMap = {
+  yuvali: { hiddenTasks: [], customTasks: [] },
+  maayani: { hiddenTasks: [], customTasks: [] },
+  pelegi: { hiddenTasks: [], customTasks: [] },
+};
+
 export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [role, setRoleState] = useState<'parent' | 'child' | null>(null);
   const syncProps = useSupabaseSync();
+  const [settings, setSettingsState] = useState<SettingsMap>(defaultSettings);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+  useEffect(() => {
+    const savedRole = localStorage.getItem('role') as 'parent' | 'child' | null;
+    if (savedRole) setRoleState(savedRole);
+
+    const savedSettings = localStorage.getItem('app_settings');
+    if (savedSettings) {
+      try {
+        setSettingsState(JSON.parse(savedSettings));
+      } catch (e) {
+        console.error("Failed to parse settings", e);
+      }
+    }
+  }, []);
+
+  const updateSettings = useCallback((kidId: KidId, newSettings: KidSettings) => {
+    setSettingsState(prev => {
+      const next = { ...prev, [kidId]: newSettings };
+      localStorage.setItem('app_settings', JSON.stringify(next));
+      return next;
+    });
+  }, []);
 
   const [timerState, setTimerState] = useState({
     isRunning: false,
@@ -57,13 +105,6 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return { ...prev, isPaused: true, endTime: null };
       }
     });
-  }, []);
-
-  useEffect(() => {
-    const saved = localStorage.getItem('role') as 'parent' | 'child' | null;
-    if (saved) {
-      setRoleState(saved);
-    }
   }, []);
 
   // Timer Background Interval
@@ -99,7 +140,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }
 
   return (
-    <AppContext.Provider value={{ role, setRole, ...syncProps, timerState, setTimerState, cancelTimer, togglePause }}>
+    <AppContext.Provider value={{ role, setRole, ...syncProps, timerState, setTimerState, cancelTimer, togglePause, settings, updateSettings, isMenuOpen, setIsMenuOpen }}>
       {children}
     </AppContext.Provider>
   );

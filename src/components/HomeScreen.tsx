@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { motion } from "motion/react";
+import { Menu } from 'lucide-react';
 import { getKids } from "../constants";
 import { KidId } from "../types";
 import { sounds, safeVibrate } from "../utils/sounds";
@@ -7,6 +8,7 @@ import { useUser } from "../contexts/UserContext";
 import ThemeSwitch from "./ThemeSwitch";
 import { useTheme } from "../contexts/ThemeContext";
 import { adjustColor } from "../utils/colors";
+import { useLanguage } from "../contexts/LanguageContext";
 
 interface Props {
   onSelectKid: (kidId: KidId) => void;
@@ -14,9 +16,10 @@ interface Props {
 }
 
 export default function HomeScreen({ onSelectKid }: Props) {
-  const { role, stars, loading } = useUser();
+  const { role, stars, loading, isMenuOpen, setIsMenuOpen } = useUser();
   const [animatingKid, setAnimatingKid] = useState<KidId | null>(null);
   const { theme } = useTheme();
+  const { language, t } = useLanguage();
 
   useEffect(() => {
     const metaThemeColor = document.querySelector('meta[name="theme-color"]');
@@ -37,7 +40,7 @@ export default function HomeScreen({ onSelectKid }: Props) {
     }, 150);
   };
 
-  const kidsConfig = getKids(theme);
+  const kidsConfig = getKids(theme, language);
 
   return (
     <motion.div
@@ -46,6 +49,15 @@ export default function HomeScreen({ onSelectKid }: Props) {
       exit={{ opacity: 0 }}
       className="flex flex-col items-center h-full w-full absolute inset-0 overflow-y-auto overflow-x-hidden box-border pb-12"
     >
+      <div className="absolute top-8 start-6 z-50">
+        <button
+          onClick={() => setIsMenuOpen(!isMenuOpen)}
+          className={`p-2 -m-2 opacity-70 hover:opacity-100 transition-opacity ${theme === 'night' ? 'text-white' : 'text-[#333]'}`}
+        >
+          <Menu size={32} strokeWidth={2.5} />
+        </button>
+      </div>
+      
       {/* Subtle background pattern */}
       <div
         className="absolute inset-0 opacity-[0.03] pointer-events-none"
@@ -60,7 +72,7 @@ export default function HomeScreen({ onSelectKid }: Props) {
           className={`text-5xl font-bold text-center drop-shadow-sm transition-colors duration-200 ${theme === "night" ? "text-white" : "text-[#333]"}`}
           style={{ transitionDelay: theme === "night" ? "0ms" : "200ms" }}
         >
-          {theme === "night" ? "ערב טוב!" : "בוקר טוב!"}
+          {theme === "night" ? (language === 'en' ? 'Good evening!' : 'ערב טוב!') : (language === 'en' ? 'Good morning!' : 'בוקר טוב!')}
         </h1>
       </div>
 
@@ -68,8 +80,12 @@ export default function HomeScreen({ onSelectKid }: Props) {
         {(Object.keys(kidsConfig) as KidId[]).map((kidId) => {
           const kid = kidsConfig[kidId];
           const isAnimating = animatingKid === kidId;
-          const bgDropShadow = adjustColor(kid.colorA, kidId === "pelegi" ? -140 : -120);
-          const OUTLINE = adjustColor(kid.colorA, -180);
+          const bgDropShadow = theme === 'night' 
+            ? adjustColor(kid.colorA, kidId === "pelegi" ? -120 : -100)
+            : adjustColor(kid.colorA, kidId === "pelegi" ? -140 : -120);
+          const OUTLINE = theme === 'night'
+            ? adjustColor(kid.colorA, -140)
+            : adjustColor(kid.colorA, -180);
 
           return (
             <div
@@ -123,7 +139,7 @@ export default function HomeScreen({ onSelectKid }: Props) {
                           </svg>
                         ))
                       ) : (
-                        <div className="flex items-center gap-0.5 text-[#333]">
+                        <div className={`flex items-center gap-0.5 ${theme === 'night' ? 'text-white' : 'text-[#333]'}`}>
                           <svg
                             viewBox="0 0 24 24"
                             className="w-3.5 h-3.5 shrink-0"

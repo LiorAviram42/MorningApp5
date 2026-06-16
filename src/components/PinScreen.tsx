@@ -40,10 +40,10 @@ export default function PinScreen({ onLogin }: Props) {
   };
 
   const getButtonClass = () => {
-    if (status === 'success') return 'bg-[#d0f4de] border-[#333] text-[#333]';
-    if (status === 'error') return 'bg-red-400 border-[#333] text-white';
-    if (theme === 'night') return 'bg-[#4a3b69] border-[#333] text-white/50';
-    return 'bg-[#f8f9fa] border-[#333] text-[#333]/50';
+    if (status === 'success') return 'bg-[#d0f4de] text-[#333] shadow-[0_4px_0_0_#a8dcb7,0_0_0_1.5px_#333,0_4px_0_1.5px_#333]';
+    if (status === 'error') return 'bg-red-400 text-white shadow-[0_4px_0_0_#dc2626,0_0_0_1.5px_#333,0_4px_0_1.5px_#333]';
+    if (theme === 'night') return 'bg-[#4a3b69] text-white/50 shadow-[0_4px_0_0_#2b1b4d,0_0_0_1.5px_#333,0_4px_0_1.5px_#333]';
+    return 'bg-[#f8f9fa] text-[#333]/50 shadow-[0_4px_0_0_#d1d5db,0_0_0_1.5px_#333,0_4px_0_1.5px_#333]';
   };
 
   const getInputClass = () => {
@@ -105,7 +105,7 @@ export default function PinScreen({ onLogin }: Props) {
           
           <button
             type="submit"
-            className={`w-14 h-14 shrink-0 border-2 shadow-[0_4px_0_#333] rounded-full active:translate-y-[4px] active:shadow-none active:rounded-xl transition-all duration-200 flex items-center justify-center cursor-pointer ${getButtonClass()}`}
+            className={`w-14 h-14 shrink-0 border-none rounded-full touch-none active:translate-y-[4px] active:shadow-[0_0_0_1.5px_#333] transition-all duration-200 flex items-center justify-center cursor-pointer ${getButtonClass()}`}
           >
             <Check size={28} strokeWidth={3} />
           </button>

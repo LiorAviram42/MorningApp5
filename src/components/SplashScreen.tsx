@@ -1,42 +1,35 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect } from 'react';
 import { useTheme } from '../contexts/ThemeContext';
+import { motion } from 'motion/react';
 
 interface Props {
   onFinish: () => void;
 }
 
 export default function SplashScreen({ onFinish }: Props) {
-  const [visible, setVisible] = useState(true);
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const { theme } = useTheme();
   
   const splashImg = theme === 'night' 
-    ? `/${theme}/Icons/splash_screen_night.png` 
-    : `/${theme}/Icons/splash_screen_summer.png`;
+    ? `/night/summer/SplashScreen_Summer_Dark.png` 
+    : `/day/summer/splash_screen_summer_Day.png`;
 
   useEffect(() => {
-    const timer1 = setTimeout(() => {
-      setVisible(false);
-      timeoutRef.current = setTimeout(onFinish, 400); // wait for fade out
+    const timer = setTimeout(() => {
+      onFinish();
     }, 2000);
-    
-    return () => {
-      clearTimeout(timer1);
-      if (timeoutRef.current) clearTimeout(timeoutRef.current);
-    };
+    return () => clearTimeout(timer);
   }, [onFinish]);
 
-  const handleClick = () => {
-    if (!visible) return;
-    setVisible(false);
-    if (timeoutRef.current) clearTimeout(timeoutRef.current);
-    timeoutRef.current = setTimeout(onFinish, 400);
-  };
+  const bgColor = theme === 'night' ? '#0f173c' : '#f7efc8';
 
   return (
-    <div 
-      onClick={handleClick}
-      className={`absolute inset-0 z-50 ${theme === 'night' ? 'bg-[#0f173c]' : 'bg-[#f7efc8]'} flex justify-center items-center transition-opacity duration-400 cursor-pointer ${visible ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+    <motion.div 
+      initial={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.5 }}
+      style={{ backgroundColor: bgColor }}
+      onClick={onFinish}
+      className="absolute inset-0 z-50 flex flex-col justify-center items-center cursor-pointer pointer-events-auto"
     >
       <img 
         src={splashImg} 
@@ -46,11 +39,6 @@ export default function SplashScreen({ onFinish }: Props) {
           e.currentTarget.style.display = 'none';
         }}
       />
-      <div className={`absolute inset-0 flex items-center justify-center z-0 ${theme === 'night' ? 'bg-[#0f173c]' : 'bg-[#f7efc8]'}`}>
-        <h1 className={`text-4xl font-bold ${theme === 'night' ? 'text-white' : 'text-[#333]'}`}>
-          {theme === 'night' ? 'לילה טוב!' : 'בוקר טוב!'}
-        </h1>
-      </div>
-    </div>
+    </motion.div>
   );
 }

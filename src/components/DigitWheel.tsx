@@ -1,5 +1,6 @@
 import React, { useRef, useEffect, useState } from "react";
 import { sounds, safeVibrate } from "../utils/sounds";
+import { useTheme } from "../contexts/ThemeContext";
 
 interface Props {
   value: string;
@@ -12,6 +13,7 @@ export default function DigitWheel({ value, onChange, max }: Props) {
   const [isScrolling, setIsScrolling] = useState(false);
   const scrollTimeout = useRef<any>(null);
   const lastTickRef = useRef<number | null>(null);
+  const { theme } = useTheme();
 
   const isCircular = max === 60;
   const sets = isCircular ? 3 : 1;
@@ -87,7 +89,7 @@ export default function DigitWheel({ value, onChange, max }: Props) {
   };
 
   return (
-    <div className="relative w-14 h-14 sm:w-16 sm:h-16 border-2 border-[#333] bg-white rounded-xl overflow-hidden box-border">
+    <div className={`relative w-14 h-14 sm:w-16 sm:h-16 border-[1.5px] rounded-xl overflow-hidden box-border ${theme === 'night' ? 'bg-[#4a3b69]/40 border-[#111]' : 'bg-white border-[#333]'}`}>
       <style>{`
         .hide-scrollbar::-webkit-scrollbar { display: none; }
       `}</style>
@@ -99,7 +101,7 @@ export default function DigitWheel({ value, onChange, max }: Props) {
       >
         
         {Array.from({ length: max * sets }).map((_, i) => (
-          <div key={i} className="w-full h-full flex items-center justify-center snap-center text-3xl font-bold text-[#333] shrink-0 box-border">
+          <div key={i} className={`w-full h-full flex items-center justify-center snap-center text-3xl font-bold shrink-0 box-border ${theme === 'night' ? 'text-white' : 'text-[#333]'}`}>
             {(i % max).toString().padStart(2, '0')}
           </div>
         ))}

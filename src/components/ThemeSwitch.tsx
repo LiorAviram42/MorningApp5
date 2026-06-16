@@ -10,7 +10,7 @@ export default function ThemeSwitch() {
   const isNight = theme === "night";
   const bgColor = isNight ? "#3b2354" : "#FDC4C1";
   const bgOutline = isNight ? adjustColor(bgColor, -60) : adjustColor(bgColor, -120);
-  const trackInnerShadow = isNight ? adjustColor(bgColor, -50) : "#d17772";
+  const trackInnerShadow = isNight ? "rgba(0,0,0,0.2)" : "rgba(0,0,0,0.6)";
 
   const thumbColor = isNight ? "#2a1a45" : "#FFFDE1";
   const thumbDropShadow = isNight ? adjustColor(thumbColor, -50) : "#c4706b";

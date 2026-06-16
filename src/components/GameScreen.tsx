@@ -28,6 +28,7 @@ import { adjustColor, interpolateColor } from "../utils/colors";
 
 function VisualTimer() {
   const { theme } = useTheme();
+  const { language } = useLanguage();
   const [isOpen, setIsOpen] = useState(false);
   const [flashEndParams, setFlashEndParams] = useState({ isFlashing: false });
   const {
@@ -196,8 +197,9 @@ function VisualTimer() {
     const observer = new ResizeObserver(() => {
       const cw = constraintsRef.current!.offsetWidth || 0;
       const sw = switchRef.current!.offsetWidth || 0;
-      const leftBound = -(cw - sw);
-      setDragBounds({ left: leftBound, right: 0 });
+      const isRtl = true;
+      const bound = isRtl ? -(cw - sw) : (cw - sw);
+      setDragBounds(isRtl ? { left: bound, right: 0 } : { left: 0, right: bound });
 
       if (isRunning && totalTime > 0) {
         const now = Date.now();
@@ -208,10 +210,10 @@ function VisualTimer() {
         const percent = preciseTimeLeft / totalTime;
 
         if (!isPaused) {
-          x.set(leftBound * percent);
+          x.set(bound * percent);
           animate(x, 0, { duration: preciseTimeLeft, ease: "linear" });
         } else {
-          animate(x, leftBound * percent, {
+          animate(x, bound * percent, {
             duration: 0.2,
             type: "spring",
             stiffness: 400,
@@ -224,7 +226,7 @@ function VisualTimer() {
             cw - (constraintsRef.current?.parentElement?.offsetWidth || cw),
           ) < 5
         ) {
-          x.set(leftBound);
+          x.set(bound);
         }
       } else if (!isRunning) {
         // Do nothing during shrink to avoid conflict with synchronized spring animation
@@ -232,14 +234,15 @@ function VisualTimer() {
     });
     observer.observe(constraintsRef.current);
     return () => observer.disconnect();
-  }, [isRunning, isPaused, totalTime, timerState.endTime, timeLeft, isOpen]);
+  }, [isRunning, isPaused, totalTime, timerState.endTime, timeLeft, isOpen, language, x]);
 
   // Re-run animation when pause state changes
   useEffect(() => {
     const cw = constraintsRef.current?.offsetWidth || 0;
     const sw = switchRef.current?.offsetWidth || 0;
     if (cw === 0 || sw === 0) return;
-    const leftBound = -(cw - sw);
+    const isRtl = true;
+    const bound = isRtl ? -(cw - sw) : (cw - sw);
 
     if (isRunning && totalTime > 0) {
       const now = Date.now();
@@ -250,10 +253,10 @@ function VisualTimer() {
       const percent = preciseTimeLeft / totalTime;
 
       if (!isPaused) {
-        x.set(leftBound * percent);
+        x.set(bound * percent);
         animate(x, 0, { duration: preciseTimeLeft, ease: "linear" });
       } else {
-        animate(x, leftBound * percent, {
+        animate(x, bound * percent, {
           duration: 0.2,
           type: "spring",
           stiffness: 400,
@@ -262,8 +265,8 @@ function VisualTimer() {
       }
     } else if (isOpen) {
       const parentW = constraintsRef.current?.parentElement?.offsetWidth || cw;
-      const targetLeftBound = -(parentW - sw);
-      animate(x, targetLeftBound, {
+      const targetBound = isRtl ? -(parentW - sw) : (parentW - sw);
+      animate(x, targetBound, {
         type: "spring",
         stiffness: 400,
         damping: 30,
@@ -271,7 +274,7 @@ function VisualTimer() {
     } else if (!isRunning) {
       animate(x, 0, { type: "spring", stiffness: 400, damping: 30 });
     }
-  }, [isOpen, isPaused, isRunning, timerState.endTime, totalTime, timeLeft]);
+  }, [isOpen, isPaused, isRunning, timerState.endTime, totalTime, timeLeft, language, x]);
 
   const handleStart = () => {
     // initialize audio context on user interaction
@@ -391,8 +394,8 @@ function VisualTimer() {
         ref={constraintsRef}
         animate={{ width: isExpanded ? "100%" : "clamp(34px,6.8vh,66px)" }}
         transition={{ type: "spring", stiffness: 400, damping: 30 }}
-        className={`h-[clamp(34px,6.8vh,66px)] rounded-full relative flex items-center bg-black/5 backdrop-blur-[2px] shrink-0 ${isExpanded ? "overflow-hidden" : ""}`}
-        style={{ boxShadow: `inset 0 4px 0 ${adjustColor("#ffb3b6", -80)}, 0 0 0 1px ${adjustColor("#ffb3b6", -150)}, 0 0 0 1px ${adjustColor("#ffb3b6", -150)}` }}
+        className={`h-[clamp(34px,6.8vh,66px)] rounded-full relative flex items-center ${theme === 'night' ? 'bg-[#4a3b69]/40' : 'bg-black/5'} backdrop-blur-[2px] shrink-0 ${isExpanded ? "overflow-hidden" : ""}`}
+        style={{ boxShadow: `inset 0 4px 0 ${theme === 'night' ? 'rgba(0,0,0,0.5)' : 'rgba(0,0,0,0.1)'}, 0 0 0 1.5px ${theme === 'night' ? '#111' : '#333'}` }}
       >
         {/* Base Timer Text (Black, shown on light track) */}
         {isRunning && (
@@ -406,13 +409,13 @@ function VisualTimer() {
 
         {/* Animated Gradient Fill */}
         <motion.div
-          className="absolute right-0 top-0 h-full rounded-full overflow-hidden"
+          className={`absolute right-0 top-0 h-full rounded-full overflow-hidden`}
           style={{
             width: useTransform(
               x,
               (curr) =>
                 Math.max(
-                  -curr +
+                  (-curr) +
                     ((switchRef.current?.offsetWidth || 0) * 0.5 || 28) +
                     16,
                   0,
@@ -423,9 +426,10 @@ function VisualTimer() {
           transition={{ duration: 0.3 }}
         >
           <div
-            className="absolute left-auto right-0 top-0 h-full bg-gradient-to-l from-[#FA6B6B] to-[#FFDAB9]"
+            className={`absolute left-auto right-0 bg-gradient-to-l top-0 h-full from-[#FA6B6B] to-[#FFDAB9]`}
             style={{ width: constraintsRef.current?.offsetWidth || "100vw" }}
           >
+            <div className="absolute inset-0 shadow-[inset_0_4px_0_#b8595c] pointer-events-none rounded-full" />
             {/* Overlay Timer Text (White, masked with gradient) */}
             {isRunning && (
               <div
@@ -438,23 +442,16 @@ function VisualTimer() {
           </div>
         </motion.div>
 
-        <div className="absolute inset-0 shadow-[inset_0_4px_0_#b8595c] pointer-events-none rounded-full" />
-
         <AnimatePresence>
           {showRightBtn && (
             <motion.button
               key="right-btn"
-              initial={{ scale: 0, opacity: 0, rotate: -45 }}
-              animate={{ scale: 1, opacity: 1, rotate: 0 }}
+              initial={{ scale: 0, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0, opacity: 0 }}
-              transition={{
-                type: "spring",
-                stiffness: 400,
-                damping: 15,
-                delay: 0.1,
-              }}
+              transition={{ duration: 0.15, ease: "easeOut" }}
               onClick={cancelTimer}
-              className="absolute right-[16px] z-10 w-[clamp(19px,3.2vh,26px)] h-[clamp(19px,3.2vh,26px)] bg-white/90 text-[#333] border-2 border-[#333] rounded-full flex items-center justify-center shadow-[0_2px_0_#333] active:translate-y-[2px] active:shadow-none"
+              className={`absolute right-[16px] z-10 w-[clamp(24px,3.5vh,28px)] h-[clamp(24px,3.5vh,28px)] bg-white text-[#333] border-[1.5px] border-[#333] shadow-[inset_0_-2px_0_0_#d1d5db] active:shadow-[inset_0_0px_0_0_#d1d5db] rounded-full flex items-center justify-center active:pt-[calc(2px)] transition-all cursor-pointer`}
             >
               <XIcon size={16} strokeWidth={3} />
             </motion.button>
@@ -543,10 +540,10 @@ function VisualTimer() {
                 initial={{ scale: 0.9, y: 20 }}
                 animate={{ scale: 1, y: 0 }}
                 exit={{ scale: 0.9, y: 20 }}
-                className="bg-[#fcf9f2] border-2 border-[#333] rounded-3xl p-6 shadow-[0_8px_0_#333] max-w-sm w-full"
+                className={`${theme === 'night' ? 'bg-[#1b2554] border-[#222] shadow-[0_4px_0_0_#222]' : 'bg-[#fcf9f2] border-[#e5e5e5] shadow-[0_4px_0_0_#e5e5e5]'} border-2 rounded-3xl p-6 max-w-sm w-full`}
               >
-                <h2 className="text-xl font-bold text-center mb-6 text-[#333]">
-                  הגדרת טיימר
+                <h2 className={`text-xl font-bold text-center mb-6 ${theme === 'night' ? 'text-white' : 'text-[#333]'}`}>
+                  {language === 'en' ? 'Timer Settings' : 'הגדרת טיימר'}
                 </h2>
 
                 <div
@@ -555,65 +552,63 @@ function VisualTimer() {
                 >
                   <div className="flex flex-col items-center">
                     <DigitWheel value={inputH} onChange={setInputH} max={100} />
-                    <span className="text-[10px] sm:text-sm font-bold text-[#333]/60 mt-1">
-                      שעות
+                    <span className={`text-[10px] sm:text-sm font-bold mt-1 ${theme === 'night' ? 'text-white' : 'text-[#333]/60'}`}>
+                      {language === 'en' ? 'Hours' : 'שעות'}
                     </span>
                   </div>
-                  <div className="text-3xl font-bold text-[#333] mt-2 sm:mt-3">
+                  <div className={`text-3xl font-bold mt-2 sm:mt-3 ${theme === 'night' ? 'text-white' : 'text-[#333]'}`}>
                     :
                   </div>
                   <div className="flex flex-col items-center">
                     <DigitWheel value={inputM} onChange={setInputM} max={60} />
-                    <span className="text-[10px] sm:text-sm font-bold text-[#333]/60 mt-1">
-                      דקות
+                    <span className={`text-[10px] sm:text-sm font-bold mt-1 ${theme === 'night' ? 'text-white' : 'text-[#333]/60'}`}>
+                      {language === 'en' ? 'Minutes' : 'דקות'}
                     </span>
                   </div>
-                  <div className="text-3xl font-bold text-[#333] mt-2 sm:mt-3">
+                  <div className={`text-3xl font-bold mt-2 sm:mt-3 ${theme === 'night' ? 'text-white' : 'text-[#333]'}`}>
                     :
                   </div>
                   <div className="flex flex-col items-center">
                     <DigitWheel value={inputS} onChange={setInputS} max={60} />
-                    <span className="text-[10px] sm:text-sm font-bold text-[#333]/60 mt-1">
-                      שניות
+                    <span className={`text-[10px] sm:text-sm font-bold mt-1 ${theme === 'night' ? 'text-white' : 'text-[#333]/60'}`}>
+                      {language === 'en' ? 'Seconds' : 'שניות'}
                     </span>
                   </div>
                 </div>
 
                 <div className="flex gap-4 mt-8">
                   {(() => {
-                    const bgCancel = "#ffffff";
-                    const cancelShadow = adjustColor(bgCancel, -80);
-                    const cancelOutline = adjustColor(bgCancel, -150);
-                    const cancelActiveShadow = `0px 4px 0px 0px ${cancelShadow}, 0px 4px 0px 1px ${cancelOutline}, 0px 0px 0px 1px ${cancelOutline}`;
-                    const cancelPressedShadow = `0px 0px 0px 0px ${cancelShadow}, 0px 0px 0px 1px ${cancelOutline}, 0px 0px 0px 1px ${cancelOutline}`;
-
-                    const bgStart = "#bae1ff";
-                    const startShadow = adjustColor(bgStart, -80);
-                    const startOutline = adjustColor(bgStart, -150);
-                    const startActiveShadow = `0px 4px 0px 0px ${startShadow}, 0px 4px 0px 1px ${startOutline}, 0px 0px 0px 1px ${startOutline}`;
-                    const startPressedShadow = `0px 0px 0px 0px ${startShadow}, 0px 0px 0px 1px ${startOutline}, 0px 0px 0px 1px ${startOutline}`;
+                    const strokeColor = '#333';
+                    const activeBgCancel = theme === 'night' ? '#4a3b69' : '#ffffff';
+                    const activeBgStart = theme === 'night' ? '#ae9cee' : '#bae1ff';
+                    const cancelShadowColor = adjustColor(activeBgCancel, theme === "night" ? -40 : -50);
+                    const startShadowColor = adjustColor(activeBgStart, theme === "night" ? -40 : -50);
+                    const cancelShadow = `0 4px 0 0 ${cancelShadowColor}, 0 0 0 1.5px ${strokeColor}, 0 4px 0 1.5px ${strokeColor}`;
+                    const startShadow = `0 4px 0 0 ${startShadowColor}, 0 0 0 1.5px ${strokeColor}, 0 4px 0 1.5px ${strokeColor}`;
+                    const cancelPressed = `0 0 0 1.5px ${strokeColor}`;
+                    const startPressed = `0 0 0 1.5px ${strokeColor}`;
 
                     return (
                       <>
                         <button
                           onClick={closeSettings}
-                          className="flex-1 py-3 rounded-xl bg-white text-[#333] font-bold transition-all"
-                          style={{ boxShadow: cancelActiveShadow }}
-                          onPointerDown={(e) => { e.currentTarget.style.boxShadow = cancelPressedShadow; e.currentTarget.style.transform = 'translateY(4px)'; }}
-                          onPointerUp={(e) => { e.currentTarget.style.boxShadow = cancelActiveShadow; e.currentTarget.style.transform = 'none'; }}
-                          onPointerLeave={(e) => { e.currentTarget.style.boxShadow = cancelActiveShadow; e.currentTarget.style.transform = 'none'; }}
+                          className={`flex-1 py-3 rounded-xl font-bold transition-all border-none ${theme === 'night' ? 'text-white' : 'text-[#333]'}`}
+                          style={{ backgroundColor: activeBgCancel, boxShadow: cancelShadow }}
+                          onPointerDown={(e) => { e.currentTarget.style.boxShadow = cancelPressed; e.currentTarget.style.transform = 'translateY(4px)'; }}
+                          onPointerUp={(e) => { e.currentTarget.style.boxShadow = cancelShadow; e.currentTarget.style.transform = 'none'; }}
+                          onPointerLeave={(e) => { e.currentTarget.style.boxShadow = cancelShadow; e.currentTarget.style.transform = 'none'; }}
                         >
-                          ביטול
+                          {language === 'en' ? 'Cancel' : 'ביטול'}
                         </button>
                         <button
                           onClick={handleStart}
-                          className="flex-1 py-3 rounded-xl bg-[#bae1ff] text-[#333] font-bold transition-all"
-                          style={{ boxShadow: startActiveShadow }}
-                          onPointerDown={(e) => { e.currentTarget.style.boxShadow = startPressedShadow; e.currentTarget.style.transform = 'translateY(4px)'; }}
-                          onPointerUp={(e) => { e.currentTarget.style.boxShadow = startActiveShadow; e.currentTarget.style.transform = 'none'; }}
-                          onPointerLeave={(e) => { e.currentTarget.style.boxShadow = startActiveShadow; e.currentTarget.style.transform = 'none'; }}
+                          className={`flex-1 py-3 rounded-xl font-bold transition-all border-none ${theme === 'night' ? 'text-white' : 'text-[#333]'}`}
+                          style={{ backgroundColor: activeBgStart, boxShadow: startShadow }}
+                          onPointerDown={(e) => { e.currentTarget.style.boxShadow = startPressed; e.currentTarget.style.transform = 'translateY(4px)'; }}
+                          onPointerUp={(e) => { e.currentTarget.style.boxShadow = startShadow; e.currentTarget.style.transform = 'none'; }}
+                          onPointerLeave={(e) => { e.currentTarget.style.boxShadow = startShadow; e.currentTarget.style.transform = 'none'; }}
                         >
-                          התחל
+                          {language === 'en' ? 'Start' : 'התחל'}
                         </button>
                       </>
                     );
@@ -700,6 +695,8 @@ interface Props {
   onBack: () => void;
 }
 
+import { useLanguage } from '../contexts/LanguageContext';
+
 export default function GameScreen({ kidId, onBack }: Props) {
   const {
     role,
@@ -710,12 +707,35 @@ export default function GameScreen({ kidId, onBack }: Props) {
     resetKidTasks,
     timerState,
     cancelTimer,
+    settings,
   } = useUser();
   const { theme } = useTheme();
+  const { language, t } = useLanguage();
 
-  const kidsConfig = getKids(theme);
+  const kidsConfig = getKids(theme, language);
   const kid = kidsConfig[kidId];
-  const allKidTasks = getTasksForKid(kidId, theme);
+  
+  // Apply hidden and custom tasks
+  const kidSettings = settings[kidId] || { hiddenTasks: [], customTasks: [] };
+  const baseTasks = getTasksForKid(kidId, theme, language).filter(t => !kidSettings.hiddenTasks.includes(t.id));
+  
+  const customTasksMapped: Task[] = kidSettings.customTasks
+    .filter(ct => ct.theme === theme || (!ct.theme && theme === 'day'))
+    .map((ct) => ({
+      id: ct.id,
+      title: ct.title,
+      iconOff: `/Icons_Vector/${ct.iconName}`,
+      iconOn: `/Icons_Vector/${ct.iconName}`,
+      side: 'left' // Will be rebalanced below
+    }));
+
+  const combinedTasks = [...baseTasks, ...customTasksMapped];
+  const rightColumnCount = Math.ceil(combinedTasks.length / 2);
+  const allKidTasks = combinedTasks.map((t, index) => ({
+    ...t,
+    side: index < rightColumnCount ? 'right' : 'left' as 'left' | 'right'
+  }));
+
   const leftTasks = allKidTasks.filter((t) => t.side === "left");
   const rightTasks = allKidTasks.filter((t) => t.side === "right");
 
@@ -804,7 +824,7 @@ export default function GameScreen({ kidId, onBack }: Props) {
       <div
         className="absolute inset-0 opacity-[0.03] pointer-events-none"
         style={{
-          backgroundImage: "radial-gradient(#333 1px, transparent 1px)",
+          backgroundImage: theme === 'night' ? "radial-gradient(#4a3b69 1px, transparent 1px)" : "radial-gradient(#d1d5db 1px, transparent 1px)",
           backgroundSize: "20px 20px",
         }}
       />
@@ -814,21 +834,26 @@ export default function GameScreen({ kidId, onBack }: Props) {
           y: 15,
           scale: 0.9,
           opacity: 0,
-          boxShadow: "0px 0px 0px #333",
+          boxShadow: theme === 'night' ? "0px 0px 0px rgba(0,0,0,0)" : "0px 0px 0px rgba(0,0,0,0)",
         }}
-        animate={{ y: 0, scale: 1, opacity: 1, boxShadow: "0px 8px 0px #333" }}
+        animate={{ 
+          y: 0, 
+          scale: 1, 
+          opacity: 1, 
+          boxShadow: `0 6px 0 0 ${theme === 'night' ? 'rgba(0,0,0,0.3)' : 'rgba(0,0,0,0.05)'}, 0 0 0 1.5px rgba(0, 0, 0, 0.5), 0 6px 0 1.5px rgba(0, 0, 0, 0.5)`
+        }}
         exit={{ scale: 0.1, y: 50, opacity: 0 }}
         transition={{ type: "spring" as const, stiffness: 400, damping: 15 }}
-        className={`flex flex-col flex-1 w-full min-h-0 backdrop-blur-sm rounded-3xl border border-[#333] px-2.5 pt-2.5 pb-0 box-border relative overflow-y-auto overflow-x-hidden z-10 ${
+        className={`flex flex-col flex-1 w-full min-h-0 backdrop-blur-sm rounded-3xl mb-2 px-2.5 pt-2.5 pb-0 box-border relative overflow-y-auto overflow-x-hidden z-10 ${
           theme === "night"
-            ? "bg-[#cdd1e4]/85 text-[#222]"
+            ? "bg-[#1b2554]/60 text-white"
             : "bg-white/75 text-[#333]"
         }`}
       >
-        <div className="grid grid-cols-[clamp(70px,24vw,110px)_1fr_clamp(70px,24vw,110px)] items-center w-full pt-2 pb-4 border-b border-[#333]/10 shrink-0">
+        <div className={`grid grid-cols-[clamp(70px,24vw,110px)_1fr_clamp(70px,24vw,110px)] items-center w-full pt-2 pb-4 border-b shrink-0 ${theme === 'night' ? 'border-white/10' : 'border-black/5'}`}>
           <div className="flex justify-center w-full px-2">
             <h3
-              className={`m-0 text-xl font-bold transition-colors duration-200 ${theme === "night" ? "text-[#1a1525]" : "text-[#333]"}`}
+              className={`m-0 text-xl font-bold transition-colors duration-200 ${theme === "night" ? "text-white" : "text-[#333]"}`}
               style={{ transitionDelay: theme === "night" ? "0ms" : "200ms" }}
             >
               {kid.name}
@@ -857,7 +882,7 @@ export default function GameScreen({ kidId, onBack }: Props) {
                       </svg>
                     ))
                   ) : (
-                    <div className="flex items-center gap-1 text-[#333]">
+                    <div className={`flex items-center gap-1 ${theme === 'night' ? 'text-white' : 'text-[#333]'}`}>
                       <svg viewBox="0 0 24 24" className="w-5 h-5 shrink-0">
                         <path
                           d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"
@@ -874,8 +899,8 @@ export default function GameScreen({ kidId, onBack }: Props) {
                   )}
                 </div>
               ) : (
-                <span className="text-[10px] font-bold text-[#333]/30 whitespace-nowrap">
-                  אין כוכבים עדיין
+                <span className={`text-[10px] font-bold whitespace-nowrap ${theme === 'night' ? 'text-white/50' : 'text-[#333]/30'}`}>
+                  {language === 'en' ? 'No stars yet' : 'אין כוכבים עדיין'}
                 </span>
               )}
             </div>
@@ -884,10 +909,16 @@ export default function GameScreen({ kidId, onBack }: Props) {
           <div className="flex justify-center w-full px-2">
             {(() => {
               const homeBg = theme === "night" ? "#76639c" : "#fde4cf";
-              const homeShadow = adjustColor(homeBg, -60);
-              const OUTLINE = adjustColor(homeBg, -120);
-              const activeHomeShadow = `0px 4px 0px 0px ${homeShadow}, 0px 4px 0px 1px ${OUTLINE}, 0px 0px 0px 1px ${OUTLINE}`;
-              const pressedHomeShadow = `0px 0px 0px 0px ${homeShadow}, 0px 0px 0px 1px ${OUTLINE}, 0px 0px 0px 1px ${OUTLINE}`;
+              const homeShadowColor = adjustColor(homeBg, theme === "night" ? -40 : -50);
+              const homeStrokeColor = theme === "night" ? "#111" : "#333";
+              const activeHomeShadow = `
+                0 4px 0 0 ${homeShadowColor},
+                0 0 0 1.5px ${homeStrokeColor},
+                0 4px 0 1.5px ${homeStrokeColor}
+              `;
+              const pressedHomeShadow = `
+                0 0 0 1.5px ${homeStrokeColor}
+              `;
 
               return (
                 <motion.button
@@ -903,7 +934,7 @@ export default function GameScreen({ kidId, onBack }: Props) {
                     stiffness: 800,
                     damping: 15,
                   }}
-                  className={`p-1.5 rounded-full cursor-pointer flex items-center justify-center w-10 h-10`}
+                  className={`p-1.5 rounded-full cursor-pointer flex items-center justify-center w-10 h-10 border-none relative touch-none`}
                   style={{
                     backgroundColor: homeBg,
                   }}
@@ -1032,176 +1063,65 @@ export default function GameScreen({ kidId, onBack }: Props) {
 
             {/* Progress Bar */}
             <div className="relative w-full h-[clamp(34px,6.8vh,66px)] shrink-0">
-              {/* Modern AI Shimmer Glow Border (Laser Beam) */}
-              {progressPct < 100 ? (
-                <>
-                  {/* Outer Diffusion Layer */}
-                  <motion.div
-                    key="shimmer-loop-glow"
-                    className="absolute pointer-events-none z-40"
-                    style={{
-                      inset: "-4px",
-                      borderRadius: "9999px",
-                      padding: "8px",
-                      background: `conic-gradient(from var(--border-angle), transparent 20%, ${kid.colorB} 50%, ${kid.colorA} 70%, rgba(255,255,255,0.6) 95%, rgba(255,255,255,0.1) 100%)`,
-                      WebkitMask: "linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)",
-                      WebkitMaskComposite: "xor",
-                      maskComposite: "exclude",
-                    }}
-                    initial={{ "--border-angle": "0deg", opacity: 0, filter: `blur(12px)` } as any}
-                    animate={{
-                      "--border-angle": ["0deg", "360deg"] as any,
-                      opacity: [0, 0.8, 0.8, 0],
-                    }}
-                    transition={{
-                      "--border-angle": { duration: 2.0, repeat: Infinity, repeatDelay: 3.5, ease: "linear" },
-                      opacity: { duration: 2.0, repeat: Infinity, repeatDelay: 3.5, ease: "linear", times: [0, 0.2, 0.8, 1] }
-                    }}
-                  />
-                  {/* Sharp Center Layer */}
-                  <motion.div
-                    key="shimmer-loop-sharp"
-                    className="absolute pointer-events-none z-50"
-                    style={{
-                      inset: "-1px",
-                      borderRadius: "9999px",
-                      padding: "2px",
-                      background: `conic-gradient(from var(--border-angle), transparent 50%, ${kid.colorA} 80%, rgba(255,255,255,0.8) 95%, rgba(255,255,255,0.8) 100%)`,
-                      WebkitMask: "linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)",
-                      WebkitMaskComposite: "xor",
-                      maskComposite: "exclude",
-                    }}
-                    initial={{ "--border-angle": "0deg", opacity: 0, filter: "blur(3px) drop-shadow(0 0 5px rgba(255,255,255,0.5))" } as any}
-                    animate={{
-                      "--border-angle": ["0deg", "360deg"] as any,
-                      opacity: [0, 0.9, 0.9, 0],
-                    }}
-                    transition={{
-                      "--border-angle": { duration: 2.0, repeat: Infinity, repeatDelay: 3.5, ease: "linear" },
-                      opacity: { duration: 2.0, repeat: Infinity, repeatDelay: 3.5, ease: "linear", times: [0, 0.2, 0.8, 1] }
-                    }}
-                  />
-                  {/* Solid Base Layer (No Blur) */}
-                  <motion.div
-                    key="shimmer-loop-solid"
-                    className="absolute pointer-events-none z-50"
-                    style={{
-                      inset: "-1px",
-                      borderRadius: "9999px",
-                      padding: "3px",
-                      background: `conic-gradient(from var(--border-angle), transparent 40%, ${kid.colorB} 70%, ${kid.colorA} 90%, rgba(255,255,255,1) 98%, rgba(255,255,255,1) 100%)`,
-                      WebkitMask: "linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)",
-                      WebkitMaskComposite: "xor",
-                      maskComposite: "exclude",
-                    }}
-                    initial={{ "--border-angle": "0deg", opacity: 0 } as any}
-                    animate={{
-                      "--border-angle": ["0deg", "360deg"] as any,
-                      opacity: [0, 1, 1, 0],
-                    }}
-                    transition={{
-                      "--border-angle": { duration: 2.0, repeat: Infinity, repeatDelay: 3.5, ease: "linear" },
-                      opacity: { duration: 2.0, repeat: Infinity, repeatDelay: 3.5, ease: "linear", times: [0, 0.2, 0.8, 1] }
-                    }}
-                  />
-                </>
-              ) : (
-                <>
-                  {/* End Outer Diffusion Layer */}
-                  <motion.div
-                    key="shimmer-end-glow"
-                    className="absolute pointer-events-none z-40"
-                    style={{
-                      inset: "-4px",
-                      borderRadius: "9999px",
-                      padding: "8px",
-                      background: `conic-gradient(from var(--border-angle), transparent 20%, ${kid.colorB} 50%, ${kid.colorA} 70%, rgba(255,255,255,0.6) 95%, rgba(255,255,255,0.1) 100%)`,
-                      WebkitMask: "linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)",
-                      WebkitMaskComposite: "xor",
-                      maskComposite: "exclude",
-                    }}
-                    initial={{ "--border-angle": "0deg", opacity: 1, filter: `blur(12px)` } as any}
-                    animate={{
-                      "--border-angle": ["0deg", "360deg"] as any,
-                      opacity: [1, 1, 0],
-                    }}
-                    transition={{ 
-                      duration: 1.5, 
-                      ease: "linear",
-                      times: [0, 0.8, 1]
-                    }}
-                  />
-                  {/* End Sharp Center Layer */}
-                  <motion.div
-                    key="shimmer-end-sharp"
-                    className="absolute pointer-events-none z-50"
-                    style={{
-                      inset: "-1px",
-                      borderRadius: "9999px",
-                      padding: "2px",
-                      background: `conic-gradient(from var(--border-angle), transparent 50%, ${kid.colorA} 80%, rgba(255,255,255,0.8) 95%, rgba(255,255,255,0.8) 100%)`,
-                      WebkitMask: "linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)",
-                      WebkitMaskComposite: "xor",
-                      maskComposite: "exclude",
-                    }}
-                    initial={{ "--border-angle": "0deg", opacity: 1, filter: "blur(3px) drop-shadow(0 0 5px rgba(255,255,255,0.5))" } as any}
-                    animate={{
-                      "--border-angle": ["0deg", "360deg"] as any,
-                      opacity: [1, 1, 0],
-                    }}
-                    transition={{ 
-                      duration: 1.5, 
-                      ease: "linear",
-                      times: [0, 0.8, 1]
-                    }}
-                  />
-                  {/* End Solid Base Layer */}
-                  <motion.div
-                    key="shimmer-end-solid"
-                    className="absolute pointer-events-none z-50"
-                    style={{
-                      inset: "-1px",
-                      borderRadius: "9999px",
-                      padding: "3px",
-                      background: `conic-gradient(from var(--border-angle), transparent 40%, ${kid.colorB} 70%, ${kid.colorA} 90%, rgba(255,255,255,1) 98%, rgba(255,255,255,1) 100%)`,
-                      WebkitMask: "linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)",
-                      WebkitMaskComposite: "xor",
-                      maskComposite: "exclude",
-                    }}
-                    initial={{ "--border-angle": "0deg", opacity: 1 } as any}
-                    animate={{
-                      "--border-angle": ["0deg", "360deg"] as any,
-                      opacity: [1, 1, 0],
-                    }}
-                    transition={{ 
-                      duration: 1.5, 
-                      ease: "linear",
-                      times: [0, 0.8, 1]
-                    }}
-                  />
-                </>
-              )}
-              
-              {/* Outer radiating white pulse for the progress bar itself at 100% */}
+              {/* Active Rotating Border Glow Layer */}
               <motion.div
-                className="absolute inset-0 rounded-full z-10 pointer-events-none"
-                initial={{ boxShadow: "0 0 0px rgba(255,255,255,0)" }}
-                animate={{
-                  boxShadow: progressPct === 100 
-                    ? ["0 0 0px rgba(255,255,255,0)", "0 0 35px rgba(255,255,255,1)", "0 0 0px rgba(255,255,255,0)"] 
-                    : "0 0 0px rgba(255,255,255,0)"
+                key={progressPct === 100 ? "glow-100" : "glow-part"}
+                className="absolute pointer-events-none z-40"
+                style={{
+                  inset: "-1.5px",
+                  borderRadius: "9999px",
+                  padding: "4px",
+                  background: `conic-gradient(from var(--border-angle), transparent 20%, ${kid.colorB} 50%, ${kid.colorA} 85%, rgba(255,255,255,1) 98%, rgba(255,255,255,1) 100%)`,
+                  WebkitMask: "linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)",
+                  WebkitMaskComposite: "xor",
+                  maskComposite: "exclude",
+                  filter: "blur(4px)",
                 }}
-                transition={{
-                  duration: 1.8, delay: 0.8, ease: "easeOut", times: [0, 0.15, 1]
+                initial={{ "--border-angle": "0deg", opacity: 0 } as any}
+                animate={
+                  progressPct === 100 
+                  ? { "--border-angle": ["0deg", "360deg"], opacity: [1, 1, 0] }
+                  : { "--border-angle": ["0deg", "360deg"], opacity: [0, 0.8, 0.8, 0] }
+                }
+                transition={
+                  progressPct === 100
+                  ? { "--border-angle": { duration: 1.2, ease: "easeOut" }, opacity: { duration: 1.2, ease: "easeOut", times: [0, 0.8, 1] } }
+                  : { "--border-angle": { duration: 3.5, repeat: Infinity, repeatDelay: 2.0, ease: "linear" }, opacity: { duration: 3.5, repeat: Infinity, repeatDelay: 2.0, ease: "linear", times: [0, 0.1, 0.9, 1] } }
+                }
+              />
+
+              {/* Active Rotating Border Solid Layer */}
+              <motion.div
+                key={progressPct === 100 ? "solid-100" : "solid-part"}
+                className="absolute pointer-events-none z-50"
+                style={{
+                  inset: "0px",
+                  borderRadius: "9999px",
+                  padding: "1.5px",
+                  background: `conic-gradient(from var(--border-angle), transparent 30%, ${kid.colorB} 60%, ${kid.colorA} 90%, rgba(255,255,255,1) 98%, rgba(255,255,255,1) 100%)`,
+                  WebkitMask: "linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)",
+                  WebkitMaskComposite: "xor",
+                  maskComposite: "exclude",
                 }}
+                initial={{ "--border-angle": "0deg", opacity: 0 } as any}
+                animate={
+                  progressPct === 100 
+                  ? { "--border-angle": ["0deg", "360deg"], opacity: [1, 1, 0] }
+                  : { "--border-angle": ["0deg", "360deg"], opacity: [0, 1, 1, 0] }
+                }
+                transition={
+                  progressPct === 100
+                  ? { "--border-angle": { duration: 1.2, ease: "easeOut" }, opacity: { duration: 1.2, ease: "easeOut", times: [0, 0.8, 1] } }
+                  : { "--border-angle": { duration: 3.5, repeat: Infinity, repeatDelay: 2.0, ease: "linear" }, opacity: { duration: 3.5, repeat: Infinity, repeatDelay: 2.0, ease: "linear", times: [0, 0.1, 0.9, 1] } }
+                }
               />
 
               {/* Original Progress Bar Container */}
-              <div className="absolute inset-0 bg-black/5 backdrop-blur-[2px] rounded-full z-10 box-border border-[1px] border-[#333] p-[clamp(3px,0.8vh,6px)] flex items-center">
-                <div className="w-full h-full rounded-full overflow-hidden bg-white/40 relative z-20">
+              <div className={`absolute inset-0 rounded-full z-10 box-border border-[1.5px] ${theme === 'night' ? 'border-[#111] bg-white/10' : 'border-[#333] bg-black/5'} p-[clamp(3px,0.8vh,6px)] flex items-center`}>
+                <div className={`w-full h-full rounded-full overflow-hidden relative z-20 ${theme === 'night' ? 'bg-[#0f173c]' : 'bg-white'}`}>
                 {progressPct === 0 && (
                   <div
-                    className="absolute right-0 top-0 h-full aspect-square rounded-full flex shrink-0"
+                    className="absolute start-0 top-0 h-full aspect-square rounded-full flex shrink-0"
                     style={{
                       backgroundImage: kid.gradient,
                       clipPath: "circle(4px at center)",
@@ -1221,25 +1141,13 @@ export default function GameScreen({ kidId, onBack }: Props) {
                       backgroundImage: kid.gradient,
                     }}
                   />
-                  <motion.div 
-                    className="absolute inset-0 bg-white"
-                    initial={{ opacity: 0, filter: "blur(0px)" }}
-                    animate={{ 
-                      opacity: progressPct === 100 ? [0, 1, 0] : 0,
-                      filter: progressPct === 100 ? ["blur(0px)", "blur(8px)", "blur(0px)"] : "blur(0px)"
-                    }}
-                    transition={
-                      progressPct === 100 
-                        ? { duration: 1.8, delay: 0.8, ease: "easeOut", times: [0, 0.15, 1] } 
-                        : { duration: 0 }
-                    }
-                  />
                 </div>
               </div>
-              {/* The star at the left end */}
-              <div className="absolute left-[20px] z-20 flex items-center justify-center h-full pointer-events-none">
+              {/* The star at the end */}
+              <div className="absolute end-[20px] z-20 flex items-center justify-center h-full pointer-events-none">
                 {progressPct === 100 ? (
                   <motion.div
+                    key="winner-star"
                     animate={{
                       scale: [1, 1.3, 1],
                       filter: [
@@ -1247,8 +1155,9 @@ export default function GameScreen({ kidId, onBack }: Props) {
                         "drop-shadow(0 0 12px #fffbed)",
                         "drop-shadow(0 0 0px transparent)",
                       ],
+                      opacity: [1, 1, 0],
                     }}
-                    transition={{ duration: 1.2, ease: "easeOut" }}
+                    transition={{ duration: 1.5, ease: "easeOut", times: [0, 0.4, 1] }}
                   >
                     <motion.svg
                       xmlns="http://www.w3.org/2000/svg"
@@ -1259,16 +1168,16 @@ export default function GameScreen({ kidId, onBack }: Props) {
                       strokeLinecap="round"
                       strokeLinejoin="round"
                       animate={{
-                        fill: ["#fffbed", "#fffbed", kid.outlineColor],
-                        stroke: ["#fffbed", "#fffbed", kid.outlineColor],
+                        fill: ["#fffbed", "#fffbed", theme === 'night' ? "rgba(255,255,255,0)" : kid.outlineColor],
+                        stroke: ["#ffffff", "#ffffff", theme === 'night' ? "rgba(255,255,255,0)" : kid.outlineColor],
                       }}
-                      transition={{ duration: 1.2, ease: "easeOut" }}
+                      transition={{ duration: 1.5, ease: "easeOut", times: [0, 0.4, 1] }}
                     >
                       <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
                     </motion.svg>
                   </motion.div>
                 ) : (
-                  <Star className="text-[#333]/30" size={24} />
+                  <Star className={theme === 'night' ? 'text-white/30' : 'text-[#333]/30'} size={24} strokeWidth={2} />
                 )}
               </div>
             </div>
@@ -1278,60 +1187,54 @@ export default function GameScreen({ kidId, onBack }: Props) {
 
         {/* Reset Button */}
         <div className="flex flex-col items-center shrink-0 mt-3 sm:mt-4 mb-2 relative">
-          <div className="flex items-center gap-4">
+          <div className="flex items-end gap-4 min-h-[48px]">
             {role === "parent" && (
               <button
                 onClick={() => handleUpdateStars(-1)}
-                className="w-8 h-8 rounded-full bg-white flex items-center justify-center shadow-[0_4px_0_0_#ccc,0_4px_0_1.5px_#333,0_0_0_1.5px_#333] active:translate-y-[4px] active:shadow-[0_0_0_0_#ccc,0_0_0_1.5px_#333,0_0_0_1.5px_#333] transition-all"
+                className={`w-10 h-10 rounded-full bg-white flex items-center justify-center border-none touch-none text-[#333] transition-all`}
+                style={{
+                  boxShadow: `0 4px 0 0 #d1d5db, 0 0 0 1.5px #333, 0 4px 0 1.5px #333`,
+                }}
+                onPointerDown={(e) => { e.currentTarget.style.boxShadow = `0 0 0 1.5px #333`; e.currentTarget.style.transform = 'translateY(4px)'; }}
+                onPointerUp={(e) => { e.currentTarget.style.boxShadow = `0 4px 0 0 #d1d5db, 0 0 0 1.5px #333, 0 4px 0 1.5px #333`; e.currentTarget.style.transform = 'none'; }}
+                onPointerLeave={(e) => { e.currentTarget.style.boxShadow = `0 4px 0 0 #d1d5db, 0 0 0 1.5px #333, 0 4px 0 1.5px #333`; e.currentTarget.style.transform = 'none'; }}
               >
-                <Minus size={18} />
+                <Minus size={20} className="text-[#333]" />
               </button>
             )}
 
             {(() => {
-              const bg =
-                themeCompletedTasks.size > 0
-                  ? theme === "night"
-                    ? "#8199d6"
-                    : "#bae1ff"
-                  : "#fcf9f2";
-              const shadow =
-                themeCompletedTasks.size > 0
-                  ? adjustColor(bg, -60)
-                  : adjustColor(bg, -20);
-              const OUTLINE =
-                themeCompletedTasks.size > 0
-                  ? adjustColor(bg, -120)
-                  : "rgba(0,0,0,0.3)";
-              const activeShadow = `0px 4px 0px 0px ${shadow}, 0px 4px 0px 1px ${OUTLINE}, 0px 0px 0px 1px ${OUTLINE}`;
-              const pressedShadow = `0px 0px 0px 0px ${shadow}, 0px 0px 0px 1px ${OUTLINE}, 0px 0px 0px 1px ${OUTLINE}`;
+              const isActive = themeCompletedTasks.size > 0;
+              // User requested always same color as day theme, and black outline (so it looks like task buttons)
+              const shadowColor = isActive ? adjustColor("#bae1ff", -50) : "transparent";
+              const bgColorClass = isActive ? "bg-[#bae1ff]" : "bg-transparent";
+                  
+              const opacityClass = isActive ? 'opacity-100' : 'opacity-40';
+              const strokeColor = isActive ? "#333" : (theme === 'night' ? 'rgba(255,255,255,1)' : '#333');
+              const textColor = isActive ? "text-[#333]" : (theme === 'night' ? 'text-white' : 'text-[#333]');
+
               return (
-                <motion.button
-                  initial={{ y: 4, boxShadow: pressedShadow }}
-                  animate={
-                    themeCompletedTasks.size > 0
-                      ? { y: 0, boxShadow: activeShadow }
-                      : { y: 4, boxShadow: pressedShadow }
-                  }
-                  whileTap={
-                    themeCompletedTasks.size > 0
-                      ? { y: 4, boxShadow: pressedShadow }
-                      : {}
-                  }
-                  transition={{
-                    type: "spring" as const,
-                    stiffness: 800,
-                    damping: 15,
-                  }}
-                  className={`py-2 px-6 rounded-2xl font-bold text-sm`}
+                <button
+                  disabled={!isActive}
+                  className={`px-6 rounded-2xl font-bold text-sm ${bgColorClass} ${textColor} ${opacityClass} transition-[transform,box-shadow,color,background-color] duration-300 ${isActive ? 'py-2 pt-2 pb-3 cursor-pointer' : 'py-2 pt-3 pb-2 cursor-default'}`}
                   style={{
-                    backgroundColor: bg,
-                    color:
-                      themeCompletedTasks.size > 0
-                        ? "#333"
-                        : "rgba(51,51,51,0.4)",
-                    cursor:
-                      themeCompletedTasks.size > 0 ? "pointer" : "default",
+                    boxShadow: isActive ? `0 4px 0 0 ${shadowColor}, 0 0 0 1.5px ${strokeColor}, 0 4px 0 1.5px ${strokeColor}` : `0 0px 0 0 transparent, 0 0 0 1.5px ${strokeColor}, 0 0px 0 1.5px ${strokeColor}`,
+                    transform: isActive ? 'translateY(0px)' : 'translateY(4px)'
+                  }}
+                  onPointerDown={(e) => { 
+                    if (!isActive) return;
+                    e.currentTarget.style.boxShadow = `0 0 0 1.5px ${strokeColor}`; 
+                    e.currentTarget.style.transform = 'translateY(4px)';
+                  }}
+                  onPointerUp={(e) => { 
+                    if (!isActive) return;
+                    e.currentTarget.style.boxShadow = `0 4px 0 0 ${shadowColor}, 0 0 0 1.5px ${strokeColor}, 0 4px 0 1.5px ${strokeColor}`; 
+                    e.currentTarget.style.transform = 'translateY(0px)';
+                  }}
+                  onPointerLeave={(e) => { 
+                    if (!isActive) return;
+                    e.currentTarget.style.boxShadow = `0 4px 0 0 ${shadowColor}, 0 0 0 1.5px ${strokeColor}, 0 4px 0 1.5px ${strokeColor}`; 
+                    e.currentTarget.style.transform = 'translateY(0px)';
                   }}
                   onClick={async () => {
                     if (themeCompletedTasks.size === 0) return;
@@ -1339,9 +1242,6 @@ export default function GameScreen({ kidId, onBack }: Props) {
                     sounds.playReset();
 
                     // Only reset the tasks for the current theme
-                    const remainingTasks = Array.from(completedTasks).filter(
-                      (t) => !t.startsWith(`${theme}_`),
-                    );
                     const resetTasks = Array.from(completedTasks).filter((t) =>
                       t.startsWith(`${theme}_`),
                     );
@@ -1351,17 +1251,23 @@ export default function GameScreen({ kidId, onBack }: Props) {
                     }
                   }}
                 >
-                  {kidId === "yuvali" ? "התחילי מחדש" : "התחל מחדש"}
-                </motion.button>
+                  {language === 'en' ? 'Start Over' : (kidId === "yuvali" ? "התחילי מחדש" : "התחל מחדש")}
+                </button>
               );
             })()}
 
             {role === "parent" && (
               <button
                 onClick={() => handleUpdateStars(1)}
-                className="w-8 h-8 rounded-full bg-white flex items-center justify-center shadow-[0_4px_0_0_#ccc,0_4px_0_1.5px_#333,0_0_0_1.5px_#333] active:translate-y-[4px] active:shadow-[0_0_0_0_#ccc,0_0_0_1.5px_#333,0_0_0_1.5px_#333] transition-all"
+                className={`w-10 h-10 rounded-full bg-white flex items-center justify-center border-none touch-none text-[#333] transition-all`}
+                style={{
+                  boxShadow: `0 4px 0 0 #d1d5db, 0 0 0 1.5px #333, 0 4px 0 1.5px #333`,
+                }}
+                onPointerDown={(e) => { e.currentTarget.style.boxShadow = `0 0 0 1.5px #333`; e.currentTarget.style.transform = 'translateY(4px)'; }}
+                onPointerUp={(e) => { e.currentTarget.style.boxShadow = `0 4px 0 0 #d1d5db, 0 0 0 1.5px #333, 0 4px 0 1.5px #333`; e.currentTarget.style.transform = 'none'; }}
+                onPointerLeave={(e) => { e.currentTarget.style.boxShadow = `0 4px 0 0 #d1d5db, 0 0 0 1.5px #333, 0 4px 0 1.5px #333`; e.currentTarget.style.transform = 'none'; }}
               >
-                <Plus size={18} />
+                <Plus size={20} className="text-[#333]" />
               </button>
             )}
           </div>
@@ -1369,14 +1275,14 @@ export default function GameScreen({ kidId, onBack }: Props) {
           <div className="min-h-[40px] mt-3 flex items-center justify-center shrink-0">
             {starsCount > 0 && role === "parent" && (
               <button
-                className="text-[10px] text-[#333]/30 underline bg-transparent border-none cursor-pointer p-0.5"
+                className={`text-[10px] ${theme === 'night' ? 'text-white/40' : 'text-[#333]/40'} underline bg-transparent border-none cursor-pointer p-0.5`}
                 onClick={async () => {
                   safeVibrate(5);
                   localStorage.removeItem(`lastStarDate_${theme}_${kidId}`);
                   await updateStar(kidId, 0);
                 }}
               >
-                איפוס כוכבים
+                {language === 'en' ? 'Reset Stars' : 'איפוס כוכבים'}
               </button>
             )}
           </div>
@@ -1501,22 +1407,25 @@ function TaskButton({
   const normalizedT = totalItems > 1 ? colorIndex / (totalItems - 1) : 0;
 
   const onBg = interpolateColor(kid.colorA, kid.colorB, normalizedT);
-  const onOutline = adjustColor(onBg, -120);
-  const onDarkShadow = adjustColor(onBg, -60);
-
-  const offBg = theme === "night" ? "#a098aa" : "#efe6e3";
-  const offOutline = adjustColor(offBg, -120);
-  const offDarkShadow = adjustColor(offBg, -40);
-
+  const offBg = theme === "night" ? "#babcce" : "#f5f5f5";
   const currentBg = isCompleted ? onBg : offBg;
-  const currentOutline = isCompleted ? onOutline : offOutline;
-  const currentDarkShadow = isCompleted ? onDarkShadow : offDarkShadow;
+  const strokeColor = theme === "night" ? "#111" : "#333";
+  const shadowColor = adjustColor(currentBg, theme === "night" ? -40 : -80);
+
+  // t('offBg') match background but slight difference
+  // GameScreen bg is bg-[#cdd1e4] night, bg-white day
 
   // Use backgroundImage for a subtle gradient on the button itself
   const currentBgGradient = `linear-gradient(to bottom, ${currentBg}, ${adjustColor(currentBg, -15)})`;
 
-  const activeShadow = `0px 4px 0px 0px ${currentDarkShadow}, 0px 4px 0px 1px ${currentOutline}, 0px 0px 0px 1px ${currentOutline}`;
-  const pressedShadow = `0px 0px 0px 0px ${currentDarkShadow}, 0px 0px 0px 1px ${currentOutline}, 0px 0px 0px 1px ${currentOutline}`;
+  const activeShadow = `
+    0 4px 0 0 ${shadowColor},
+    0 0 0 1.5px ${strokeColor},
+    0 4px 0 1.5px ${strokeColor}
+  `;
+  const pressedShadow = `
+    0 0 0 1.5px ${strokeColor}
+  `;
 
   const buttonWidth = "clamp(32px,min(16vw,12vh),88px)";
 
@@ -1527,6 +1436,7 @@ function TaskButton({
           y: 0,
           boxShadow: activeShadow,
           background: currentBgGradient,
+          border: 'none',
           borderRadius: "9999px",
           width: buttonWidth,
         });
@@ -1536,6 +1446,7 @@ function TaskButton({
         y: 4,
         boxShadow: pressedShadow,
         background: currentBgGradient,
+        border: 'none',
         borderRadius: "9999px",
         width: buttonWidth,
       });
@@ -1546,6 +1457,7 @@ function TaskButton({
     activeShadow,
     pressedShadow,
     currentBgGradient,
+    strokeColor,
     isPressed,
     controls,
     buttonWidth,
@@ -1555,17 +1467,13 @@ function TaskButton({
     setIsPressed(true);
     const anticipatedCompleted = !isCompleted;
     const anticipatedBg = anticipatedCompleted ? onBg : offBg;
-    const anticipatedOutline = anticipatedCompleted ? onOutline : offOutline;
-    const anticipatedDarkShadow = anticipatedCompleted
-      ? onDarkShadow
-      : offDarkShadow;
     const anticipatedBgGradient = `linear-gradient(to bottom, ${anticipatedBg}, ${adjustColor(anticipatedBg, -15)})`;
-    const anticipatedPressedShadow = `0px 0px 0px 0px ${anticipatedDarkShadow}, 0px 0px 0px 1px ${anticipatedOutline}, 0px 0px 0px 1px ${anticipatedOutline}`;
-
+    
     controls.start({
       y: 4,
-      boxShadow: anticipatedPressedShadow,
+      boxShadow: pressedShadow,
       background: anticipatedBgGradient,
+      border: 'none',
       borderRadius: "9999px",
       width: buttonWidth,
       transition: { type: "spring" as const, stiffness: 1000, damping: 20 },
@@ -1578,17 +1486,14 @@ function TaskButton({
 
     const anticipatedCompleted = !isCompleted;
     const anticipatedBg = anticipatedCompleted ? onBg : offBg;
-    const anticipatedOutline = anticipatedCompleted ? onOutline : offOutline;
-    const anticipatedDarkShadow = anticipatedCompleted
-      ? onDarkShadow
-      : offDarkShadow;
     const anticipatedBgGradient = `linear-gradient(to bottom, ${anticipatedBg}, ${adjustColor(anticipatedBg, -15)})`;
-    const anticipatedActiveShadow = `0px 4px 0px 0px ${anticipatedDarkShadow}, 0px 4px 0px 1px ${anticipatedOutline}, 0px 0px 0px 1px ${anticipatedOutline}`;
+    const anticipatedActiveShadow = `0px 4px 0px 0px ${strokeColor}`;
 
     controls.start({
       y: 0,
       boxShadow: anticipatedActiveShadow,
       background: anticipatedBgGradient,
+      border: `1.5px solid ${strokeColor}`,
       borderRadius: "9999px",
       width: buttonWidth,
       transition: {
@@ -1608,7 +1513,7 @@ function TaskButton({
       y: 0,
       boxShadow: activeShadow,
       background: currentBgGradient,
-      borderColor: currentOutline,
+      border: `1.5px solid ${strokeColor}`,
       borderRadius: "9999px",
       width: buttonWidth,
       transition: { type: "spring" as const, stiffness: 400, damping: 20 },
@@ -1622,7 +1527,7 @@ function TaskButton({
           y: isReady ? 0 : 4,
           boxShadow: isReady ? activeShadow : pressedShadow,
           background: currentBgGradient,
-          borderColor: currentOutline,
+          border: `1.5px solid ${strokeColor}`,
           borderRadius: "9999px",
           width: buttonWidth,
         }}
@@ -1638,11 +1543,7 @@ function TaskButton({
           alt={task.title}
           className={`${task.id === 'face' || task.id === 'dinner' ? "w-[56%] h-[56%]" : "w-[70%] h-[70%]"} object-contain pointer-events-none transition-all duration-300 absolute`}
           style={{
-            filter: isCompleted 
-              ? "brightness(0)" 
-              : theme === "night" 
-                ? "brightness(0) invert(1)" 
-                : "brightness(0)",
+            filter: "brightness(0)",
             opacity: isCompleted 
               ? 0.9 
               : theme === "night" 
@@ -1655,7 +1556,7 @@ function TaskButton({
         />
       </motion.button>
       <div className="h-[clamp(20px,3.2vh,32px)] flex items-center justify-center w-full shrink-0">
-        <span className="block text-[clamp(9px,min(2.5vw,1.8vh),13.5px)] font-bold text-[#333] text-center leading-[1.1] whitespace-pre-line px-1 break-words line-clamp-2">
+        <span className={`block text-[clamp(9px,min(2.5vw,1.8vh),13.5px)] font-bold text-center leading-[1.1] whitespace-pre-line px-1 break-words line-clamp-2 ${theme === 'night' ? 'text-white' : 'text-[#333]'}`}>
           {task.title}
         </span>
       </div>

@@ -70,10 +70,25 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, []);
 
+  useEffect(() => {
+    if (syncProps.syncedSettings) {
+      setSettingsState(syncProps.syncedSettings);
+      localStorage.setItem('app_settings', JSON.stringify(syncProps.syncedSettings));
+    }
+  }, [syncProps.syncedSettings]);
+
+  const updateSettingsSyncRef = React.useRef(syncProps.updateSettingsSync);
+  useEffect(() => {
+    updateSettingsSyncRef.current = syncProps.updateSettingsSync;
+  }, [syncProps.updateSettingsSync]);
+
   const updateSettings = useCallback((kidId: KidId, newSettings: KidSettings) => {
     setSettingsState(prev => {
       const next = { ...prev, [kidId]: newSettings };
       localStorage.setItem('app_settings', JSON.stringify(next));
+      if (updateSettingsSyncRef.current) {
+         updateSettingsSyncRef.current(next);
+      }
       return next;
     });
   }, []);

@@ -53,6 +53,7 @@ const loadCachedStars = (): SyncedStars => {
 export function useSupabaseSync() {
   const [tasks, setTasks] = useState<SyncedTasks>(loadCachedTasks());
   const [stars, setStars] = useState<SyncedStars>(loadCachedStars());
+  const [syncedSettings, setSyncedSettings] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
   // Save to cache whenever tasks change
@@ -86,7 +87,14 @@ export function useSupabaseSync() {
         });
         
         const processed = new Set<string>();
+        let loadedSettings: any = null;
         tasksData.forEach((row: any) => {
+          if (row.child_name === 'app_settings') {
+            if (!loadedSettings) {
+              try { loadedSettings = JSON.parse(row.task_name); } catch(e) {}
+            }
+            return;
+          }
           const key = row.child_name + '_' + row.task_name;
           if (processed.has(key)) return;
           processed.add(key);
@@ -96,6 +104,7 @@ export function useSupabaseSync() {
             newTasks[row.child_name].add(row.task_name);
           }
         });
+        if (loadedSettings) setSyncedSettings(loadedSettings);
         setTasks(newTasks);
       }
 
@@ -127,6 +136,13 @@ export function useSupabaseSync() {
         const row = payload.new as any;
         if (!row || !row.child_name || !row.task_name) return;
         
+        if (row.child_name === 'app_settings') {
+          try {
+            setSyncedSettings(JSON.parse(row.task_name));
+          } catch(e) {}
+          return;
+        }
+
         setTasks((prev) => {
           const newSet = new Set(prev[row.child_name]);
           if (row.is_completed && isToday(row.updated_at)) {
@@ -226,9 +242,21 @@ export function useSupabaseSync() {
     }
   };
 
+  const updateSettingsSync = async (newSettings: any) => {
+    setSyncedSettings(newSettings);
+    await supabase.from('tasks').insert({
+      child_name: 'app_settings',
+      task_name: JSON.stringify(newSettings),
+      is_completed: false,
+      updated_at: new Date().toISOString()
+    });
+  };
+
   return {
     tasks,
     stars,
+    syncedSettings,
+    updateSettingsSync,
     loading,
     toggleTask,
     updateStar,

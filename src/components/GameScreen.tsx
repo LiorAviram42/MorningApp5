@@ -1117,7 +1117,7 @@ export default function GameScreen({ kidId, onBack }: Props) {
               />
 
               {/* Original Progress Bar Container */}
-              <div className={`absolute inset-0 rounded-full z-10 box-border border-[1.5px] ${theme === 'night' ? 'border-[#111] bg-white/10' : 'border-[#333] bg-black/5'} p-[clamp(3px,0.8vh,6px)] flex items-center`}>
+              <div className={`absolute inset-0 rounded-full z-10 box-border border-[1.5px] ${theme === 'night' ? 'border-[rgba(17,17,17,0.42)] bg-white/10' : 'border-[rgba(0,0,0,0.42)] bg-black/5'} p-[clamp(3px,0.8vh,6px)] flex items-center`}>
                 <div className={`w-full h-full rounded-full overflow-hidden relative z-20 ${theme === 'night' ? 'bg-[#0f173c]' : 'bg-white'}`}>
                 {progressPct === 0 && (
                   <div

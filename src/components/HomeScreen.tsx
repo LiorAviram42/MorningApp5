@@ -6,6 +6,7 @@ import { sounds, safeVibrate } from "../utils/sounds";
 import { useUser } from "../contexts/UserContext";
 import ThemeSwitch from "./ThemeSwitch";
 import { useTheme } from "../contexts/ThemeContext";
+import { adjustColor } from "../utils/colors";
 
 interface Props {
   onSelectKid: (kidId: KidId) => void;
@@ -67,14 +68,8 @@ export default function HomeScreen({ onSelectKid }: Props) {
         {(Object.keys(kidsConfig) as KidId[]).map((kidId) => {
           const kid = kidsConfig[kidId];
           const isAnimating = animatingKid === kidId;
-
-          let nightShadow = "shadow-[0px_4px_0px_#333]";
-          if (kidId === "yuvali")
-            nightShadow = "shadow-[0px_4px_0px_#b85474]"; // Dark pastel pink
-          else if (kidId === "maayani")
-            nightShadow = "shadow-[0px_4px_0px_#1e3a8a]"; // Deep blue
-          else if (kidId === "pelegi")
-            nightShadow = "shadow-[0px_4px_0px_#064e3b]"; // Dark green
+          const bgDropShadow = adjustColor(kid.colorA, kidId === "pelegi" ? -140 : -120);
+          const OUTLINE = adjustColor(kid.colorA, -180);
 
           return (
             <div
@@ -83,13 +78,15 @@ export default function HomeScreen({ onSelectKid }: Props) {
               onClick={() => handleSelect(kidId)}
             >
               <div
-                className={`w-[100px] h-[100px] rounded-full border border-[#333] bg-white overflow-hidden transition-all duration-75 active:translate-y-[4px] active:shadow-none relative ${
-                  isAnimating
-                    ? "translate-y-[4px] shadow-none"
-                    : theme === "night"
-                      ? nightShadow
-                      : "shadow-[0px_4px_0px_#333]"
+                className={`w-[100px] h-[100px] rounded-full overflow-hidden transition-all duration-75 active:translate-y-[4px] relative ${
+                  isAnimating ? "translate-y-[4px]" : ""
                 }`}
+                style={{
+                  backgroundColor: "white",
+                  boxShadow: isAnimating
+                    ? `0px 0px 0px 0px ${bgDropShadow}, 0px 0px 0px 1.5px ${OUTLINE}, 0px 0px 0px 1.5px ${OUTLINE}`
+                    : `0px 4px 0px 0px ${bgDropShadow}, 0px 4px 0px 1.5px ${OUTLINE}, 0px 0px 0px 1.5px ${OUTLINE}`,
+                }}
               >
                 <img
                   src={kid.profileImg}

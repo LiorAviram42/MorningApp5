@@ -14,5 +14,7 @@ export interface KidConfig {
   name: string;
   profileImg: string;
   gradient: string;
+  colorA: string;
+  colorB: string;
   outlineColor: string;
 }

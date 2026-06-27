@@ -33,21 +33,23 @@ export default function SettingsScreen({ onBack }: Props) {
   const kidsIds = Object.keys(kidsConfig) as KidId[];
   const [selectedKid, setSelectedKid] = useState<KidId>(kidsIds[0]);
 
-  const currentSettings = settings[selectedKid] || { hiddenTasks: [], customTasks: [] };
+  const currentSettings = (settings && settings[selectedKid]) || { hiddenTasks: [], customTasks: [] };
   const allBuiltInTasks = getTasksForKid(selectedKid, editingTheme, language);
   // Filter for custom tasks created for this theme, or tasks created before theme was added (fallback to day)
-  const filteredCustomTasks = currentSettings.customTasks.filter(t => t.theme === editingTheme || (!t.theme && editingTheme === 'day'));
+  const filteredCustomTasks = (currentSettings.customTasks || []).filter(t => t.theme === editingTheme || (!t.theme && editingTheme === 'day'));
 
   const [isAdding, setIsAdding] = useState(false);
   const [newTaskTitle, setNewTaskTitle] = useState('');
   const [newTaskIcon, setNewTaskIcon] = useState('Medicine.svg');
 
   const MAX_TASKS = 10;
-  const currentTotal = allBuiltInTasks.filter(t => !currentSettings.hiddenTasks.includes(t.id)).length + filteredCustomTasks.length;
+  const hiddenTasks = currentSettings.hiddenTasks || [];
+  const customTasks = currentSettings.customTasks || [];
+  const currentTotal = allBuiltInTasks.filter(t => !hiddenTasks.includes(t.id)).length + filteredCustomTasks.length;
 
   const toggleTaskVisibility = (taskId: string) => {
-    const isHidden = currentSettings.hiddenTasks.includes(taskId);
-    let newHidden = [...currentSettings.hiddenTasks];
+    const isHidden = hiddenTasks.includes(taskId);
+    let newHidden = [...hiddenTasks];
     if (isHidden) {
       newHidden = newHidden.filter(id => id !== taskId);
     } else {
@@ -59,7 +61,7 @@ export default function SettingsScreen({ onBack }: Props) {
   const removeCustomTask = (taskId: string) => {
     updateSettings(selectedKid, {
       ...currentSettings,
-      customTasks: currentSettings.customTasks.filter(t => t.id !== taskId)
+      customTasks: customTasks.filter(t => t.id !== taskId)
     });
   };
 
@@ -76,7 +78,7 @@ export default function SettingsScreen({ onBack }: Props) {
 
     updateSettings(selectedKid, {
       ...currentSettings,
-      customTasks: [...currentSettings.customTasks, newTask]
+      customTasks: [...customTasks, newTask]
     });
 
     setNewTaskTitle('');
@@ -133,7 +135,7 @@ export default function SettingsScreen({ onBack }: Props) {
     >
       {/* Header */}
       <div className="flex items-center justify-between px-6 pt-12 pb-6 shrink-0 z-10">
-        <h2 className={`text-2xl font-bold ${textColor}`}>{t('editTasks')}</h2>
+        <h2 className={`text-2xl font-normal ${textColor}`}>{t('editTasks')}</h2>
         <motion.button 
           onClick={onBack} 
           className={`w-12 h-12 rounded-full flex items-center justify-center border-none transition-all cursor-pointer z-10 ${appTheme === 'night' ? 'text-white' : 'text-[#333]'}`}
@@ -154,7 +156,7 @@ export default function SettingsScreen({ onBack }: Props) {
         <div className="flex gap-2 shrink-0 mb-6 border-b border-black/5 pb-6">
           <button
             onClick={() => setEditingTheme('day')}
-            className={`flex-1 py-3 rounded-full font-bold border-[1.5px] transition-all`}
+            className={`flex-1 py-3 rounded-full font-normal border-[1.5px] transition-all`}
             style={{
               backgroundColor: editingTheme === 'day' ? (appTheme === 'night' ? '#4a3b69' : '#ffffff') : 'transparent',
               color: editingTheme === 'day' ? (appTheme === 'night' ? '#ffffff' : '#333333') : (appTheme === 'night' ? '#ffffff' : '#333333'),
@@ -166,7 +168,7 @@ export default function SettingsScreen({ onBack }: Props) {
           </button>
           <button
             onClick={() => setEditingTheme('night')}
-            className={`flex-1 py-3 rounded-full font-bold border-[1.5px] transition-all`}
+            className={`flex-1 py-3 rounded-full font-normal border-[1.5px] transition-all`}
             style={{
               backgroundColor: editingTheme === 'night' ? (appTheme === 'night' ? '#4a3b69' : '#ffffff') : 'transparent',
               color: editingTheme === 'night' ? (appTheme === 'night' ? '#ffffff' : '#333333') : (appTheme === 'night' ? '#ffffff' : '#333333'),
@@ -186,7 +188,7 @@ export default function SettingsScreen({ onBack }: Props) {
               <button
                 key={kidId}
                 onClick={() => setSelectedKid(kidId)}
-                className={`px-5 py-2 rounded-full font-bold whitespace-nowrap transition-colors border-2 ${
+                className={`px-5 py-2 rounded-full font-normal whitespace-nowrap transition-colors border-2 ${
                   isSelected 
                     ? `bg-[#fcf9f2] text-[#333] border-[#333]` // the kids buttons inside here stay dark text because they have a light background selected
                     : 'bg-transparent border-transparent text-current opacity-50'
@@ -201,14 +203,14 @@ export default function SettingsScreen({ onBack }: Props) {
 
         <div className="flex flex-col gap-3">
           {allBuiltInTasks.map(task => {
-            const isActive = !currentSettings.hiddenTasks.includes(task.id);
+            const isActive = !hiddenTasks.includes(task.id);
             return (
               <div key={task.id} className={`flex items-center justify-between rounded-2xl p-4 border-[1.5px] ${panelBorder} ${panelBg}`}>
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 flex items-center justify-center">
                     <img src={task.iconOn} alt="" className={`max-w-full max-h-full ${iconFilterClass}`} />
                   </div>
-                  <span className={`font-bold ${textColor}`}>{task.title}</span>
+                  <span className={`font-normal ${textColor}`}>{task.title}</span>
                 </div>
                 {renderToggle(isActive, () => toggleTaskVisibility(task.id))}
               </div>
@@ -221,7 +223,7 @@ export default function SettingsScreen({ onBack }: Props) {
                 <div className="w-10 h-10 flex items-center justify-center">
                   <img src={`/Icons_Vector/${task.iconName}`} alt="" className={`max-w-full max-h-full ${iconFilterClass}`} />
                 </div>
-                <span className={`font-bold ${textColor}`}>{task.title}</span>
+                <span className={`font-normal ${textColor}`}>{task.title}</span>
               </div>
               {/* Inset shadow minus button */}
               <button
@@ -246,7 +248,7 @@ export default function SettingsScreen({ onBack }: Props) {
                 placeholder={t('taskNamePlaceholder')}
                 value={newTaskTitle}
                 onChange={e => setNewTaskTitle(e.target.value)}
-                className={`w-full bg-black/5 border-2 border-transparent rounded-xl px-4 py-3 font-bold outline-none focus:border-[#333] dark:focus:border-white transition-colors ${textColor}`}
+                className={`w-full bg-black/5 border-2 border-transparent rounded-xl px-4 py-3 font-normal outline-none focus:border-[#333] dark:focus:border-white transition-colors ${textColor}`}
                 maxLength={20}
               />
               <div className="flex gap-2 overflow-x-auto pb-2 hide-scrollbar">
@@ -265,7 +267,7 @@ export default function SettingsScreen({ onBack }: Props) {
               <div className="flex gap-2 mt-2">
                 <button
                   onClick={() => setIsAdding(false)}
-                  className={`flex-1 py-3 px-2 rounded-xl font-bold border-none flex items-center justify-center transition-all cursor-pointer ${appTheme === 'night' ? 'text-white' : 'text-[#333]'}`}
+                  className={`flex-1 py-3 px-2 rounded-xl font-normal border-none flex items-center justify-center transition-all cursor-pointer ${appTheme === 'night' ? 'text-white' : 'text-[#333]'}`}
                   style={{
                     backgroundColor: appTheme === 'night' ? '#4a3b69' : '#f3f4f6',
                     boxShadow: `0 4px 0 0 ${appTheme === 'night' ? adjustColor('#4a3b69', -20) : '#d1d5db'}, 0 0 0 1.5px ${appTheme === 'night' ? '#111' : '#333'}, 0 4px 0 1.5px ${appTheme === 'night' ? '#111' : '#333'}`
@@ -279,7 +281,7 @@ export default function SettingsScreen({ onBack }: Props) {
                 <button
                   disabled={!newTaskTitle.trim()}
                   onClick={addCustomTask}
-                  className={`flex-1 py-3 px-2 rounded-xl font-bold border-none flex items-center justify-center transition-all cursor-pointer ${appTheme === 'night' ? 'text-white' : 'text-[#333]'} disabled:opacity-50`}
+                  className={`flex-1 py-3 px-2 rounded-xl font-normal border-none flex items-center justify-center transition-all cursor-pointer ${appTheme === 'night' ? 'text-white' : 'text-[#333]'} disabled:opacity-50`}
                   style={{
                     backgroundColor: appTheme === 'night' ? '#ae9cee' : '#bae1ff',
                     boxShadow: !newTaskTitle.trim() ? `0 0 0 1.5px ${appTheme === 'night' ? '#111' : '#333'}` : `0 4px 0 0 ${appTheme === 'night' ? adjustColor('#ae9cee', -20) : adjustColor('#bae1ff', -20)}, 0 0 0 1.5px ${appTheme === 'night' ? '#111' : '#333'}, 0 4px 0 1.5px ${appTheme === 'night' ? '#111' : '#333'}`
@@ -296,7 +298,7 @@ export default function SettingsScreen({ onBack }: Props) {
             <button
               onClick={() => setIsAdding(true)}
               disabled={currentTotal >= MAX_TASKS}
-              className={`mt-2 w-full py-4 rounded-xl border-none font-bold flex flex-col items-center justify-center gap-2 disabled:opacity-50 transition-all cursor-pointer ${appTheme === 'night' ? 'text-white' : 'text-[#333]'}`}
+              className={`mt-2 w-full py-4 rounded-xl border-none font-normal flex flex-col items-center justify-center gap-2 disabled:opacity-50 transition-all cursor-pointer ${appTheme === 'night' ? 'text-white' : 'text-[#333]'}`}
               style={{
                 backgroundColor: appTheme === 'night' ? 'rgba(74, 59, 105, 0.8)' : '#ffffff',
                 boxShadow: currentTotal >= MAX_TASKS ? `0 0 0 1.5px ${appTheme === 'night' ? '#111' : '#333'}` : `0 4px 0 0 ${appTheme === 'night' ? adjustColor('#4a3b69', -20) : '#d1d5db'}, 0 0 0 1.5px ${appTheme === 'night' ? '#111' : '#333'}, 0 4px 0 1.5px ${appTheme === 'night' ? '#111' : '#333'}`

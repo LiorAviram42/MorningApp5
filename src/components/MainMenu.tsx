@@ -38,7 +38,7 @@ export default function MainMenu({ onOpenSettings, onOpenStars }: Props) {
               <div className={`w-10 h-10 rounded-full flex items-center justify-center border-2 border-current opacity-70 group-hover:opacity-100 transition-opacity flex-shrink-0 ${textColor}`}>
                 <Settings size={20} strokeWidth={2.5} />
               </div>
-              <span className={`text-base font-bold sm:text-lg ${textColor}`}>{t('settings')}</span>
+              <span className={`text-base font-normal sm:text-lg ${textColor}`}>{t('settings')}</span>
             </button>
 
             <button 
@@ -48,7 +48,7 @@ export default function MainMenu({ onOpenSettings, onOpenStars }: Props) {
               <div className={`w-10 h-10 rounded-full flex items-center justify-center border-2 border-current opacity-70 group-hover:opacity-100 transition-opacity flex-shrink-0 ${textColor}`}>
                 <Star size={20} strokeWidth={2.5} />
               </div>
-              <span className={`text-base font-bold sm:text-lg ${textColor}`}>{t('starManagement')}</span>
+              <span className={`text-base font-normal sm:text-lg ${textColor}`}>{t('starManagement')}</span>
             </button>
           </>
         )}
@@ -60,7 +60,7 @@ export default function MainMenu({ onOpenSettings, onOpenStars }: Props) {
           <div className={`w-10 h-10 rounded-full flex items-center justify-center border-2 border-current opacity-70 group-hover:opacity-100 transition-opacity flex-shrink-0 ${textColor}`}>
             <LogOut size={20} strokeWidth={2.5} />
           </div>
-          <span className={`text-base font-bold sm:text-lg ${textColor}`}>{t('profileSetup')}</span>
+          <span className={`text-base font-normal sm:text-lg ${textColor}`}>{t('profileSetup')}</span>
         </button>
 
         {role === 'parent' && (
@@ -74,7 +74,7 @@ export default function MainMenu({ onOpenSettings, onOpenStars }: Props) {
               <div className={`w-10 h-10 rounded-full flex items-center justify-center border-2 border-current opacity-70 group-hover:opacity-100 transition-opacity flex-shrink-0 ${textColor}`}>
                 <Globe size={20} strokeWidth={2.5} />
               </div>
-              <span className={`text-base font-bold sm:text-lg ${textColor}`}>{language === 'he' ? 'English' : 'עברית'}</span>
+              <span className={`text-base font-normal sm:text-lg ${textColor}`}>{language === 'he' ? 'English' : 'עברית'}</span>
             </button>
           </>
         )}

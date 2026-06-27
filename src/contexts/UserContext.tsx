@@ -84,7 +84,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const updateSettings = useCallback((kidId: KidId, newSettings: KidSettings) => {
     setSettingsState(prev => {
-      const next = { ...prev, [kidId]: newSettings };
+      const next = { ...(prev || defaultSettings), [kidId]: newSettings };
       localStorage.setItem('app_settings', JSON.stringify(next));
       if (updateSettingsSyncRef.current) {
          updateSettingsSyncRef.current(next);

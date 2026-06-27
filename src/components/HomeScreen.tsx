@@ -69,7 +69,7 @@ export default function HomeScreen({ onSelectKid }: Props) {
 
       <div className="flex-1 flex flex-col justify-center z-10 w-full">
         <h1
-          className={`text-5xl font-bold text-center drop-shadow-sm transition-colors duration-200 ${theme === "night" ? "text-white" : "text-[#333]"}`}
+          className={`text-5xl font-normal text-center drop-shadow-sm transition-colors duration-200 ${theme === "night" ? "text-white" : "text-[#333]"}`}
           style={{ transitionDelay: theme === "night" ? "0ms" : "200ms" }}
         >
           {theme === "night" ? (language === 'en' ? 'Good evening!' : 'ערב טוב!') : (language === 'en' ? 'Good morning!' : 'בוקר טוב!')}
@@ -111,7 +111,7 @@ export default function HomeScreen({ onSelectKid }: Props) {
                 />
               </div>
               <div
-                className={`mt-4 text-xl font-black tracking-tight flex items-center gap-1 transition-colors duration-200 ${theme === "night" ? "text-white/90" : "text-[#333]"}`}
+                className={`mt-4 text-xl font-normal tracking-tight flex items-center gap-1 transition-colors duration-200 ${theme === "night" ? "text-white/90" : "text-[#333]"}`}
                 style={{ transitionDelay: theme === "night" ? "0ms" : "200ms" }}
               >
                 {kid.name}
@@ -153,10 +153,10 @@ export default function HomeScreen({ onSelectKid }: Props) {
                               strokeLinecap="round"
                             />
                           </svg>
-                          <span className="text-[10px] font-black mt-[1px]">
+                          <span className="text-[10px] font-normal mt-[1px]">
                             ×
                           </span>
-                          <span className="text-[10px] font-black">
+                          <span className="text-[10px] font-normal">
                             {stars[kidId]}
                           </span>
                         </div>

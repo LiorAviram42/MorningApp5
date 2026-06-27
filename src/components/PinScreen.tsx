@@ -74,7 +74,7 @@ export default function PinScreen({ onLogin }: Props) {
         animate={{ y: 0, opacity: 1 }}
         className={`w-[90%] max-w-[320px] backdrop-blur-md rounded-3xl border-2 shadow-[0_8px_0_#333] p-5 md:p-6 flex flex-col items-center relative z-10 box-border mx-auto ${windowBg}`}
       >
-        <h1 className={`text-xl md:text-2xl font-bold mb-5 text-center ${textColor}`}>מי נכנס?</h1>
+        <h1 className={`text-xl md:text-2xl font-normal mb-5 text-center ${textColor}`}>מי נכנס?</h1>
 
         <form onSubmit={handleSubmit} noValidate className="flex items-center gap-3 w-full justify-center box-border">
           <input
@@ -98,7 +98,7 @@ export default function PinScreen({ onLogin }: Props) {
               setPin(nextPin.slice(0, 4));
               setStatus('idle');
             }}
-            className={`min-w-0 flex-1 px-2 h-14 text-center text-2xl font-bold tracking-[0.3em] rounded-2xl border-2 outline-none shadow-[inset_0_2px_4px_rgba(0,0,0,0.05)] transition-colors appearance-none ${getInputClass()}`}
+            className={`min-w-0 flex-1 px-2 h-14 text-center text-2xl font-normal tracking-[0.3em] rounded-2xl border-2 outline-none shadow-[inset_0_2px_4px_rgba(0,0,0,0.05)] transition-colors appearance-none ${getInputClass()}`}
             placeholder="קוד"
             autoFocus
           />
@@ -116,7 +116,7 @@ export default function PinScreen({ onLogin }: Props) {
             <motion.p 
               initial={{ opacity: 0, y: -5 }} 
               animate={{ opacity: 1, y: 0 }} 
-              className="text-red-500 font-bold text-sm text-center m-0"
+              className="text-red-500 font-normal text-sm text-center m-0"
             >
               קוד שגוי, נסו שוב
             </motion.p>

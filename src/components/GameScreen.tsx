@@ -23,6 +23,8 @@ import {
 } from "lucide-react";
 import { useUser } from "../contexts/UserContext";
 import { useTheme } from "../contexts/ThemeContext";
+import { useLanguage } from '../contexts/LanguageContext';
+import { KidConfig } from "../types";
 import DigitWheel from "./DigitWheel";
 import { adjustColor, interpolateColor } from "../utils/colors";
 
@@ -400,7 +402,7 @@ function VisualTimer() {
         {/* Base Timer Text (Black, shown on light track) */}
         {isRunning && (
           <div
-            className="absolute inset-0 flex items-center justify-center font-[900] text-[#333] z-0 pointer-events-none text-xl sm:text-2xl"
+            className="absolute inset-0 flex items-center justify-center font-normal text-[#333] z-0 pointer-events-none text-xl sm:text-2xl"
             style={{ direction: "ltr" }}
           >
             {formatTime(timeLeft)}
@@ -433,7 +435,7 @@ function VisualTimer() {
             {/* Overlay Timer Text (White, masked with gradient) */}
             {isRunning && (
               <div
-                className="absolute inset-0 flex items-center justify-center font-[900] text-white z-0 pointer-events-none text-xl sm:text-2xl"
+                className="absolute inset-0 flex items-center justify-center font-normal text-white z-0 pointer-events-none text-xl sm:text-2xl"
                 style={{ direction: "ltr" }}
               >
                 {formatTime(timeLeft)}
@@ -542,7 +544,7 @@ function VisualTimer() {
                 exit={{ scale: 0.9, y: 20 }}
                 className={`${theme === 'night' ? 'bg-[#1b2554] border-[#222] shadow-[0_4px_0_0_#222]' : 'bg-[#fcf9f2] border-[#e5e5e5] shadow-[0_4px_0_0_#e5e5e5]'} border-2 rounded-3xl p-6 max-w-sm w-full`}
               >
-                <h2 className={`text-xl font-bold text-center mb-6 ${theme === 'night' ? 'text-white' : 'text-[#333]'}`}>
+                <h2 className={`text-xl font-normal text-center mb-6 ${theme === 'night' ? 'text-white' : 'text-[#333]'}`}>
                   {language === 'en' ? 'Timer Settings' : 'הגדרת טיימר'}
                 </h2>
 
@@ -552,25 +554,25 @@ function VisualTimer() {
                 >
                   <div className="flex flex-col items-center">
                     <DigitWheel value={inputH} onChange={setInputH} max={100} />
-                    <span className={`text-[10px] sm:text-sm font-bold mt-1 ${theme === 'night' ? 'text-white' : 'text-[#333]/60'}`}>
+                    <span className={`text-[10px] sm:text-sm font-normal mt-1 ${theme === 'night' ? 'text-white' : 'text-[#333]/60'}`}>
                       {language === 'en' ? 'Hours' : 'שעות'}
                     </span>
                   </div>
-                  <div className={`text-3xl font-bold mt-2 sm:mt-3 ${theme === 'night' ? 'text-white' : 'text-[#333]'}`}>
+                  <div className={`text-3xl font-normal mt-2 sm:mt-3 ${theme === 'night' ? 'text-white' : 'text-[#333]'}`}>
                     :
                   </div>
                   <div className="flex flex-col items-center">
                     <DigitWheel value={inputM} onChange={setInputM} max={60} />
-                    <span className={`text-[10px] sm:text-sm font-bold mt-1 ${theme === 'night' ? 'text-white' : 'text-[#333]/60'}`}>
+                    <span className={`text-[10px] sm:text-sm font-normal mt-1 ${theme === 'night' ? 'text-white' : 'text-[#333]/60'}`}>
                       {language === 'en' ? 'Minutes' : 'דקות'}
                     </span>
                   </div>
-                  <div className={`text-3xl font-bold mt-2 sm:mt-3 ${theme === 'night' ? 'text-white' : 'text-[#333]'}`}>
+                  <div className={`text-3xl font-normal mt-2 sm:mt-3 ${theme === 'night' ? 'text-white' : 'text-[#333]'}`}>
                     :
                   </div>
                   <div className="flex flex-col items-center">
                     <DigitWheel value={inputS} onChange={setInputS} max={60} />
-                    <span className={`text-[10px] sm:text-sm font-bold mt-1 ${theme === 'night' ? 'text-white' : 'text-[#333]/60'}`}>
+                    <span className={`text-[10px] sm:text-sm font-normal mt-1 ${theme === 'night' ? 'text-white' : 'text-[#333]/60'}`}>
                       {language === 'en' ? 'Seconds' : 'שניות'}
                     </span>
                   </div>
@@ -592,7 +594,7 @@ function VisualTimer() {
                       <>
                         <button
                           onClick={closeSettings}
-                          className={`flex-1 py-3 rounded-xl font-bold transition-all border-none ${theme === 'night' ? 'text-white' : 'text-[#333]'}`}
+                          className={`flex-1 py-3 rounded-xl font-normal transition-all border-none ${theme === 'night' ? 'text-white' : 'text-[#333]'}`}
                           style={{ backgroundColor: activeBgCancel, boxShadow: cancelShadow }}
                           onPointerDown={(e) => { e.currentTarget.style.boxShadow = cancelPressed; e.currentTarget.style.transform = 'translateY(4px)'; }}
                           onPointerUp={(e) => { e.currentTarget.style.boxShadow = cancelShadow; e.currentTarget.style.transform = 'none'; }}
@@ -602,7 +604,7 @@ function VisualTimer() {
                         </button>
                         <button
                           onClick={handleStart}
-                          className={`flex-1 py-3 rounded-xl font-bold transition-all border-none ${theme === 'night' ? 'text-white' : 'text-[#333]'}`}
+                          className={`flex-1 py-3 rounded-xl font-normal transition-all border-none ${theme === 'night' ? 'text-white' : 'text-[#333]'}`}
                           style={{ backgroundColor: activeBgStart, boxShadow: startShadow }}
                           onPointerDown={(e) => { e.currentTarget.style.boxShadow = startPressed; e.currentTarget.style.transform = 'translateY(4px)'; }}
                           onPointerUp={(e) => { e.currentTarget.style.boxShadow = startShadow; e.currentTarget.style.transform = 'none'; }}
@@ -695,8 +697,6 @@ interface Props {
   onBack: () => void;
 }
 
-import { useLanguage } from '../contexts/LanguageContext';
-
 export default function GameScreen({ kidId, onBack }: Props) {
   const {
     role,
@@ -716,10 +716,12 @@ export default function GameScreen({ kidId, onBack }: Props) {
   const kid = kidsConfig[kidId];
   
   // Apply hidden and custom tasks
-  const kidSettings = settings[kidId] || { hiddenTasks: [], customTasks: [] };
-  const baseTasks = getTasksForKid(kidId, theme, language).filter(t => !kidSettings.hiddenTasks.includes(t.id));
+  const kidSettings = (settings && settings[kidId]) || { hiddenTasks: [], customTasks: [] };
+  const hiddenTasks = kidSettings.hiddenTasks || [];
+  const customTasks = kidSettings.customTasks || [];
+  const baseTasks = getTasksForKid(kidId, theme, language).filter(t => !hiddenTasks.includes(t.id));
   
-  const customTasksMapped: Task[] = kidSettings.customTasks
+  const customTasksMapped: Task[] = customTasks
     .filter(ct => ct.theme === theme || (!ct.theme && theme === 'day'))
     .map((ct) => ({
       id: ct.id,
@@ -853,7 +855,7 @@ export default function GameScreen({ kidId, onBack }: Props) {
         <div className={`grid grid-cols-[clamp(70px,24vw,110px)_1fr_clamp(70px,24vw,110px)] items-center w-full pt-2 pb-4 border-b shrink-0 ${theme === 'night' ? 'border-white/10' : 'border-black/5'}`}>
           <div className="flex justify-center w-full px-2">
             <h3
-              className={`m-0 text-xl font-bold transition-colors duration-200 ${theme === "night" ? "text-white" : "text-[#333]"}`}
+              className={`m-0 text-xl font-normal transition-colors duration-200 ${theme === "night" ? "text-white" : "text-[#333]"}`}
               style={{ transitionDelay: theme === "night" ? "0ms" : "200ms" }}
             >
               {kid.name}
@@ -893,13 +895,13 @@ export default function GameScreen({ kidId, onBack }: Props) {
                           strokeLinecap="round"
                         />
                       </svg>
-                      <span className="text-sm font-black mt-[1px]">×</span>
-                      <span className="text-sm font-black">{starsCount}</span>
+                      <span className="text-sm font-normal mt-[1px]">×</span>
+                      <span className="text-sm font-normal">{starsCount}</span>
                     </div>
                   )}
                 </div>
               ) : (
-                <span className={`text-[10px] font-bold whitespace-nowrap ${theme === 'night' ? 'text-white/50' : 'text-[#333]/30'}`}>
+                <span className={`text-[10px] font-normal whitespace-nowrap ${theme === 'night' ? 'text-white/50' : 'text-[#333]/30'}`}>
                   {language === 'en' ? 'No stars yet' : 'אין כוכבים עדיין'}
                 </span>
               )}
@@ -1216,7 +1218,7 @@ export default function GameScreen({ kidId, onBack }: Props) {
               return (
                 <button
                   disabled={!isActive}
-                  className={`px-6 rounded-2xl font-bold text-sm ${bgColorClass} ${textColor} ${opacityClass} transition-[transform,box-shadow,color,background-color] duration-300 ${isActive ? 'py-2 pt-2 pb-3 cursor-pointer' : 'py-2 pt-3 pb-2 cursor-default'}`}
+                  className={`px-6 rounded-2xl font-normal text-sm ${bgColorClass} ${textColor} ${opacityClass} transition-[transform,box-shadow,color,background-color] duration-300 ${isActive ? 'py-2 pt-2 pb-3 cursor-pointer' : 'py-2 pt-3 pb-2 cursor-default'}`}
                   style={{
                     boxShadow: isActive ? `0 4px 0 0 ${shadowColor}, 0 0 0 1.5px ${strokeColor}, 0 4px 0 1.5px ${strokeColor}` : `0 0px 0 0 transparent, 0 0 0 1.5px ${strokeColor}, 0 0px 0 1.5px ${strokeColor}`,
                     transform: isActive ? 'translateY(0px)' : 'translateY(4px)'
@@ -1377,8 +1379,6 @@ export default function GameScreen({ kidId, onBack }: Props) {
     </motion.div>
   );
 }
-
-import { KidConfig } from "../types";
 
 interface TaskButtonProps {
   task: Task;
@@ -1556,7 +1556,7 @@ function TaskButton({
         />
       </motion.button>
       <div className="h-[clamp(20px,3.2vh,32px)] flex items-center justify-center w-full shrink-0">
-        <span className={`block text-[clamp(9px,min(2.5vw,1.8vh),13.5px)] font-bold text-center leading-[1.1] whitespace-pre-line px-1 break-words line-clamp-2 ${theme === 'night' ? 'text-white' : 'text-[#333]'}`}>
+        <span className={`block text-[clamp(9px,min(2.5vw,1.8vh),13.5px)] font-normal text-center leading-[1.1] whitespace-pre-line px-1 break-words line-clamp-2 ${theme === 'night' ? 'text-white' : 'text-[#333]'}`}>
           {task.title}
         </span>
       </div>

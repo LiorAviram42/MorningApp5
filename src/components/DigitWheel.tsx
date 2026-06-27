@@ -101,7 +101,7 @@ export default function DigitWheel({ value, onChange, max }: Props) {
       >
         
         {Array.from({ length: max * sets }).map((_, i) => (
-          <div key={i} className={`w-full h-full flex items-center justify-center snap-center text-3xl font-bold shrink-0 box-border ${theme === 'night' ? 'text-white' : 'text-[#333]'}`}>
+          <div key={i} className={`w-full h-full flex items-center justify-center snap-center text-3xl font-normal shrink-0 box-border ${theme === 'night' ? 'text-white' : 'text-[#333]'}`}>
             {(i % max).toString().padStart(2, '0')}
           </div>
         ))}

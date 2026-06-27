@@ -40,7 +40,7 @@ export default function StarManagementScreen({ onBack }: Props) {
     >
       {/* Header */}
       <div className="flex items-center justify-between px-6 pt-12 pb-6 shrink-0 z-10 border-b border-black/5 dark:border-white/5">
-        <h2 className={`text-2xl font-bold ${textColor}`}>{t('starManagement')}</h2>
+        <h2 className={`text-2xl font-normal ${textColor}`}>{t('starManagement')}</h2>
         <motion.button 
           onClick={onBack} 
           className={`w-12 h-12 rounded-full flex items-center justify-center border-[1.5px] ${appTheme === 'night' ? 'bg-[#4a3b69] border-[#2d2242] text-white shadow-[0_4px_0_0_#2d2242]' : 'bg-white border-[#d1d5db] text-[#333] shadow-[0_4px_0_0_#d1d5db]'} active:translate-y-[4px] active:shadow-none transition-all cursor-pointer z-10`}
@@ -59,11 +59,11 @@ export default function StarManagementScreen({ onBack }: Props) {
                 <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full overflow-hidden border-2 border-black/10 dark:border-white/20 bg-gray-100 flex-shrink-0">
                   <img src={kid.profileImg} alt={kid.name} className="w-full h-full object-cover" />
                 </div>
-                <span className={`font-bold text-lg sm:text-xl truncate ${textColor}`}>{kid.name}</span>
+                <span className={`font-normal text-lg sm:text-xl truncate ${textColor}`}>{kid.name}</span>
               </div>
               
               <div className="absolute left-1/2 -translate-x-1/2 flex items-center justify-center">
-                <span className={`font-black flex items-center justify-center gap-1 text-base px-3 py-1 rounded-full w-[70px] sm:w-[80px] border shadow-[0_2px_0_0_rgba(0,0,0,0.1)] ${appTheme === 'night' ? 'text-[#ffbc00] bg-white/10 border-[#ffbc00]/30' : 'text-[#333] bg-white/80 border-black/10'}`}>
+                <span className={`font-normal flex items-center justify-center gap-1 text-base px-3 py-1 rounded-full w-[70px] sm:w-[80px] border shadow-[0_2px_0_0_rgba(0,0,0,0.1)] ${appTheme === 'night' ? 'text-[#ffbc00] bg-white/10 border-[#ffbc00]/30' : 'text-[#333] bg-white/80 border-black/10'}`}>
                   <svg viewBox="0 0 24 24" className="w-4 h-4 shrink-0 -ms-1"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="#ffbc00" stroke="#000" strokeWidth="1" strokeLinejoin="round" strokeLinecap="round"/></svg>
                   {starCount}
                 </span>

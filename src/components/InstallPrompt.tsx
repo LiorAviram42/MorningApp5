@@ -45,7 +45,7 @@ export default function InstallPrompt() {
     <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 animate-bounce">
       <button 
         onClick={handleInstallClick}
-        className="bg-emerald-500 text-white px-6 py-3 rounded-full shadow-lg font-bold flex items-center gap-2 border-2 border-white"
+        className="bg-emerald-500 text-white px-6 py-3 rounded-full shadow-lg font-normal flex items-center gap-2 border-2 border-white"
       >
         <Download size={20} />
         <span>התקן אפליקציה</span>
